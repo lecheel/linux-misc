@@ -1,0 +1,43 @@
+#! /bin/bash
+if [[ $1 == "-h" ]]; then
+   echo "lecp v0.1"
+   echo "     ls     -- list last 10 files remote"
+   echo "     file   -- scp file to remote lesrc..."
+   echo "     file . -- retrive file from remote lesrc..."
+   exit
+fi
+
+figlet "192.168.0.2"
+
+if [[ $1 == "ls" ]]; then
+   figlet "last 10 uploads"
+   ssh 192.168.0.2 ls -ltr /tmp | tail -10
+#   ssh lesrc.dyndns.org find /tmp -iname "*" -atime 3 -type -f
+   exit
+fi   
+
+if [[ $# -eq 1 ]]; then
+   if [[ -f $1 ]]; then
+     while true; do
+         echo -e "(\033[92mupload\033[0m)"
+         read -p "Do you want to copy $1 -> lesrc.dyndns... ?(Y/n)" yn
+             case $yn in
+             [Yy]* ) echo -e "scp \033[91m$1\033[0m --> lesrc...:/tmp"; scp $1 192.168.0.2:/tmp; break;;
+             [Nn]* ) exit;;
+             * ) echo "Please answer yes or no.";;
+             esac
+     done
+#     scp $1 lesrc.dyndns.org:/tmp
+   else
+     echo -e "\033[91m$1\033[0m not exist"
+   fi
+   exit
+fi
+
+if [[ $1 == "" ]]; then
+   echo "lecp from 192.168.0.2"
+else
+   echo -e "(\033[96mDownload\033[0m)" 
+   scp 192.168.0.2:/tmp/$@ 
+fi   
+ 

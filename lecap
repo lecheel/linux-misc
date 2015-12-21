@@ -1,0 +1,5 @@
+#! /bin/bash
+figlet "pcap"
+echo "adb pull /sdcard/file.pcap xxx.pcap"
+adb shell tcpdump -s 0  -i eth0 -w /sdcard/file.pcap
+#adb shell tcpdump -s 0  -i rmnet0 -w /sdcard/file.pcap

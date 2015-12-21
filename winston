@@ -1,0 +1,99 @@
+#! /usr/bin/env python
+"""
+
+This is a little python script to disable Google AdView from disassembled
+Android's APKs (disassembled thanks to Apktool). 
+
+Pre-requesites:
+	
+	1. Install Apktool (http://code.google.com/p/android-apktool/)
+	2. Be sure that jarsigner is installed on your system
+
+How to use it:
+	
+	1. Disassemble your APK with Apktool 
+		
+		$ apktool d com.example-1.apk
+	
+	2. Launch winston.py 
+	
+		$ ./winston.py com.example-1
+	
+	3. Rebuild your APK
+	
+		$ apktool b com.example-1 com.example-noad.apk
+		$ keytool -genkey -v -keystore my.keystore -alias myalias -keyalg RSA -keysize 2048 -validity 10000
+		$ jarsigner -v -keystore my.keystore myalias com.example-noad.apk
+		$ adb install com.example-noad.apk
+
+And that's it !
+
+Have fun ;)
+
+"""
+
+import re
+import os
+import optparse
+from subprocess import Popen
+
+class WinstonWolf:
+	
+	def __init__(self, directory):
+		self.base_dir = directory
+		
+	def __checkGoogleAdView(self):
+		return os.path.exists(os.path.join(self.base_dir,'smali/com/google/ads/AdView.smali'))
+		
+	def patchAdView(self):
+		print '[i] Checking AdView presence ...'
+		if self.__checkGoogleAdView():
+			try:
+				print '[i] Patching AdView file ...'
+				f = open(os.path.join(self.base_dir,'smali/com/google/ads/AdView.smali'),'r')
+				src = f.read()
+				start = src.index('.method public loadAd(Lcom/google/ads/AdRequest;)V')
+				patch = """
+.method public loadAd(Lcom/google/ads/AdRequest;)V
+    .locals 1
+    return-void
+.end method		
+				"""
+				if start:
+					end = src[start:].index('.end method')
+					if end:
+						patched = src[:start] + patch + src[(start+end+11):]
+						f.close()
+						f = open(os.path.join(self.base_dir,'smali/com/google/ads/AdView.smali'),'w')
+						f.write(patched)
+						f.close()
+						print '[i] AdView patched !'
+						return True
+					else:
+						print '[!] Cannot patch: end method not found'
+						return False
+				else:
+					print '[!] Cannot find AdView->loadAd() method'
+					return False
+	
+			except IOError,e:
+				print '[!] Unable to open/read/write file.'
+				return False
+		else:
+			print '[!] AdView.smali not found !'		
+
+def createParser():
+	parser = optparse.OptionParser("usage: %prog [options]")
+	parser.add_option('-d','--directory',dest='directory',help='Directory of android application disassembly (created by apktool)',metavar='DIR')
+	return parser	
+		
+def banner():
+	print '[ Android APK GoogleAds remover - By virtualabs (http://virtualabs.fr) ]'
+
+if __name__ == '__main__':
+	banner()
+	(options, args) = createParser().parse_args()
+        print options
+	if options.directory:
+		ww = WinstonWolf(options.directory)
+		ww.patchAdView()

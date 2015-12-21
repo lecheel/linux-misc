@@ -1,0 +1,14 @@
+#! /bin/bash
+if [[ $1 == "" ]]; then
+    echo "Usage:"
+    echo -e "   \033[91mvx \033[92mdir1 \033[93mdir2\033[0m"
+    echo "   vimdiff file1 file2"
+    exit
+fi
+if [[ -d $1 ]]; then
+    echo "vimdiff Direcroty via DirDiff.vim"
+    vimdiff -c "DirDiff $1 $2"
+else
+    echo "vimdiff files"
+    vimdiff $1 $2
+fi

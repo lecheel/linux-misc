@@ -1,0 +1,508 @@
+#! /usr/bin/env python
+"""
+   leau packages power by Lechee.Lai 2o13
+
+"""
+import alsaaudio, wave, numpy
+import multiprocessing
+import time
+from threading import Timer
+from scipy.io.wavfile import read
+import matplotlib.pyplot as plt
+import math
+import pylab
+import struct
+import pyaudio
+#from lib import smooth
+from subprocess import call
+from argparse import ArgumentParser
+
+from ctypes import *
+from contextlib import contextmanager
+from pyfiglet import Figlet
+
+from struct import pack
+from math import sin, pi
+import time
+
+import sys,os
+
+"""
+   use scipy
+   sudo apt-get install python-scipy python-numpy libsndfile1-dev python-audioread python-pyaudio \
+        python-pyalsa python-alsaaudio python-matplotlib python-pyfiglet ...
+
+
+"""
+
+
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+
+def py_error_handler(filename, line, function, err, fmt):
+    pass
+
+c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+@contextmanager
+def noalsaerr():
+    asound = cdll.LoadLibrary('libasound.so.2')
+    asound.snd_lib_error_set_handler(c_error_handler)
+    yield
+    asound.snd_lib_error_set_handler(None)
+
+
+class ADB:
+    def call_adb(self, command):
+        command_result = ''
+        command_text = 'adb %s' % command
+	results = os.popen(command_text, "r")
+        while 1:
+            line = results.readline()
+            if not line: break
+            command_result += line
+        return command_result
+
+class MPLAY:
+    def mplayer(self,command):
+        command_result = ''
+        command_text = 'mplayer -nolirc %s' % command
+        print command_text
+	results = os.popen(command_text, "r")
+        while 1:
+            line = results.readline()
+            if not line: break
+            command_result += line
+        return command_result
+
+class AudioFile:
+    chunk = 1024
+
+    def __init__(self, file):
+        """ Init audio stream """ 
+        with noalsaerr():
+            self.wf = wave.open(file, 'rb')
+            self.p = pyaudio.PyAudio()
+        self.stream = self.p.open(
+            format = self.p.get_format_from_width(self.wf.getsampwidth()),
+            channels = self.wf.getnchannels(),
+            rate = self.wf.getframerate(),
+            output = True
+        )
+
+    def play(self):
+        """ Play entire file """
+        data = self.wf.readframes(self.chunk)
+        while data != '':
+            self.stream.write(data)
+            data = self.wf.readframes(self.chunk)
+
+    def close(self):
+        """ Graceful shutdown """ 
+        self.stream.close()
+        self.p.terminate()
+
+def pcm2wav(pcm):
+    pcmfile = open(pcm,'rb')
+    pcmdata = pcmfile.read()
+    wavfile = open(pcm+".wav","wb")
+    wavfile.setparams((2, 1, 16000, 0, 'NONE', 'NONE'))
+    wavfile.writeframes(pcmdata)
+    pcmfile.close()
+    wavfile.close()
+
+def recAudio(fname):
+    print "Rec for 10s %s" % fname
+    inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE)
+    inp.setchannels(1)
+    inp.setrate(44100)
+    inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+    inp.setperiodsize(1024)
+
+    w = wave.open(fname, 'w')
+    w.setnchannels(1)
+    w.setsampwidth(2)
+    w.setframerate(44100)
+
+    while True:
+	l, data = inp.read()
+    #    a = numpy.fromstring(data, dtype='int16')
+    #    print numpy.abs(a).mean()
+	w.writeframes(data)
+
+def safe_log10(x, minval=0.0000000001):
+    return numpy.log10(x.clip(min=minval))
+
+def add_wav(fname,idx,color):
+    rate, wavdata = read(fname)
+    pcm=numpy.fromstring(wavdata, dtype=numpy.int16)
+    pylab.subplot(idx)
+    pylab.title(fname)
+    pylab.grid(True)
+    pylab.subplots_adjust(hspace=.5)
+#    pylab.plot(numpy.arange(len(pcm))/float(rate)*1000,pcm,color)
+    pylab.plot((numpy.arange(len(pcm))/float(rate)+1)*300,pcm,color)
+#    pylab.xlabel("Time")
+    try:
+        yylim = os.environ["ylim"]
+        yylim = int(yylim)
+    except KeyError:
+        yylim = 40000
+    va = [-yylim,yylim]
+    pylab.ylim(va)
+    pylab.ylabel("Amp")
+#    ax = pylab.gca()
+#    ax.set_autoscale_on(False)
+
+def conv_waveform(fname):
+    form = [411,412,413,414,415],["b-","r-","y-","k-","y-"]
+    idx = 0
+    fig = plt.figure("leau v0.1")
+    fig.suptitle('audio Leakage compare')
+    for title in fname:
+#        if len(fname)>1:
+#            pylab.ylim([-40000, 40000])
+        add_wav(title,form[0][idx],form[1][idx])
+        idx = idx + 1
+    msg="%s.png" %(fname[0][:-4])
+    pylab.show()
+
+def tickCalc(fname):
+    """
+      TODO
+      need to fine tune for your own tick.wav
+    """
+    #######>----- change from here
+    try:
+        thdb = os.environ["thdb"]
+        thdb = int(thdb)
+    except KeyError:
+        thdb = -20
+    tick_threshold = thdb
+    # chunk much small more accuracy
+    chunk = 250
+    # ref tick duration
+    tick_wide = 100
+    num_of_tick = 20
+
+    #######<------
+
+    samprate, wavdata = read(fname)
+#    chunk = samprate / 8
+    tt= len(wavdata)/chunk
+    frames=len(wavdata)
+    duration=frames/float(samprate)
+    slice=(duration/tt)*1000
+    print "Summary: \033[95m%s\033[0m" % fname
+    print "  tick threshold: %d dB" % thdb
+    print "  duration   : %6.2fs" % (duration)
+    print "  slice      : %6.2fms" % slice
+    print "  tick width : %6.2fms" %(tick_wide)
+    print "  sample rate: %dHz" % samprate
+
+    max = numpy.max( numpy.absolute(wavdata) )
+    ref_pos = numpy.array([])
+    data_db = numpy.array([])
+    time_pos = numpy.array([])
+    latency_db = numpy.array([])
+
+    """
+       real measure from audacity
+    """
+    for i in range(20):
+        ref_pos = numpy.append(ref_pos,500*(i+1))
+    count =0
+    ii = 0
+    last_ii = 0
+    for i in range(len(wavdata) / chunk):
+        ii = ii + 1
+        values = numpy.array( wavdata[i*chunk : (i+1)*chunk] )
+        # normalize [0, 1]
+        values = values / float(max)
+
+        values = numpy.power(values, 2)
+        rms = numpy.sqrt( numpy.mean(values) )
+        # decibel
+        db = 20 * numpy.log10( (1e-20+rms) ) #/ float(max)
+        if db > tick_threshold:
+            if ii>last_ii+(tick_wide/slice):  #/ slice*10 ~= 100ms for whole tap
+                last_ii = ii
+                count = count +1
+#                print "time=%5.2f" %(slice*ii)
+                time_pos = numpy.append(time_pos,slice*ii)
+        data_db = numpy.append(data_db, db)
+#    print time_pos
+    print "%d Ticks!!! (chunk=%d) len=%d count= %d slice=%5.2fms" % (count,chunk,len(wavdata),tt,(duration/tt)*1000)
+    """
+      if ticks detect without Error show latency
+    """
+    if count == num_of_tick:
+        for i in range(count):
+            latency_db = numpy.append(latency_db,(time_pos[i]-ref_pos[i]))
+#        print latency_db
+        print "%25s :: \033[92mmean=%6.2fms \033[91mmax=%6.2fms \033[93mmin=%6.2fms\033[0m tolerance as slice\033[92m%5.2fms\033[0m" % (fname,numpy.mean(latency_db),numpy.max(latency_db), numpy.min(latency_db),slice)
+    else:
+        print time_pos
+        print ref_pos
+#    pylab.subplot(411)
+#    pylab.title("REF,--")
+#    pylab.grid(True)
+#    pylab.plot(numpy.arange(count),time_pos-ref_pos,"r-")
+#    pylab.show()
+
+def moreInfo(fname,offset):
+    #######>----- change from here
+    thdb = -10
+    chunk = 250
+
+    samprate, wavdata = read(fname)
+#    chunk = samprate / 8
+    len(wavdata)/chunk
+    frames=len(wavdata)
+    duration=frames/float(samprate)
+    print "------------------"
+    aa=(frames/duration)
+    chunk=(aa)*2.2
+    print "Summary: \033[95m%s\033[0m" % fname
+    print "  tick threshold: %d dB" % thdb
+    print "  duration   : %6.2fs" % (duration)
+    print "  sample rate: %dHz" % samprate
+
+
+    bb=int(aa*offset)
+#    cc=frames-offset
+#    max = numpy.max( numpy.absolute(wavdata) )
+#    for i in range() / chunk):
+#        print "i"
+
+
+def micAnalyze(fname):
+    """
+      TODO
+      check you have good mic for reference
+    """
+    #######>----- change from here
+    thdb = -10
+    chunk = 250
+
+    samprate, wavdata = read(fname)
+#    chunk = samprate / 8
+    tt= len(wavdata)/chunk
+    frames=len(wavdata)
+    duration=frames/float(samprate)
+    slice=(duration/tt)*1000
+    print tt
+    print "Summary: \033[95m%s\033[0m" % fname
+    print "  tick threshold: %d dB" % thdb
+    print "  duration   : %6.2fs" % (duration)
+    print "  slice      : %6.2fms" % slice
+    print "  sample rate: %dHz" % samprate
+
+    max = numpy.max( numpy.absolute(wavdata) )
+
+    count =0
+    ii = 0
+    last_ii = 0
+    # find first reference point
+    for i in range(len(wavdata) / chunk):
+        ii = ii + 1
+        values = numpy.array( wavdata[i*chunk : (i+1)*chunk] )
+#        # normalize [0, 1]
+        values = values / float(max)
+
+        values = numpy.power(values, 2)
+        nn = numpy.mean(values)
+        if nn > 0.00000001:
+            rms = numpy.sqrt(nn)
+            # decibel
+            db = 20 * numpy.log10( (1e-20+rms) ) #/ float(max)
+            if db > thdb:
+                print ii
+                print "time=%5.2f" %(slice*ii)
+                break
+        else:
+            print "---Error !!!!!!!!!!!!!!!!"
+    moreInfo(fname,slice*ii/100)
+
+def au_file(name, freq, freq1, dur, vol):
+    fout = open(name, 'wb')
+    # header needs size, encoding=2, sampling_rate=8000, channel=1
+    fout.write('.snd' + pack('>5L', 24, 8*dur, 2, 8000, 1))
+    factor = 2 * pi * freq/8000
+    factor1 = 2 * pi * freq1/8000
+    # write data
+    for seg in range(8 * dur):
+        # sine wave calculations
+        sin_seg = sin(seg * factor) + sin(seg * factor1)
+        fout.write(pack('b', vol * 64 * sin_seg))
+    fout.close()
+
+def playtone():
+    a=MPLAY()
+    plist = ["tone00_400","tone10_400","tone20_400",
+             "tone00_600","tone10_600","tone20_600",
+             "tone00_800","tone10_800","tone20_800",
+             "tone00_1000","tone10_1000","tone20_1000",
+             "tone00_1200","tone10_1200","tone20_1200",
+             "tone00_1400","tone10_1400","tone20_1400",
+             "tone00_1600","tone10_1600","tone20_1600",
+             "tone00_1800","tone10_1800","tone20_1800",
+             "tone00_2000","tone10_2000","tone20_2000"]
+    for fn in plist:
+        time.sleep(0.2)
+        fname="/opt/raw/%s.wav" % fn
+        print time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+	a = AudioFile(fname)
+	a.play()
+	a.close()
+#        a.mplayer(fname)
+#        print fname
+
+    print time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+
+def setup_parser():
+    parser = ArgumentParser(description='leau for Audio processing....', add_help=False)
+    parser.add_argument('--help', action='help', help='show this help message and exit')
+    parser.add_argument('filename', nargs="*", help='Analysis Wavefrom')
+    parser.add_argument('-re','--rec',  action='store_true', help='WAV record for 10 seconds')
+    parser.add_argument('-pl','--play', action='store_true', help="play Wav file")
+    parser.add_argument('-sw','--sweep', action='store_true', help="play sweep 300-3000Hz and Record in 10s")
+    parser.add_argument('-ti','--tick', action='store_true', help="play tick and Record in 10s")
+    parser.add_argument('-la','--latency', action='store_true', help="check tick Wav latency base on -ti option")
+    parser.add_argument('-ad','--adbtap', action='store_true', help="adb tap and play WAV file")
+    parser.add_argument('-m0','--mplayer', action='store_true', help="mplayer tone from 400~2000Hz every 4s")
+    parser.add_argument('-mi','--mic', action='store_true', help="microphone test decibel")
+    parser.add_argument('-ma','--micAnalyze', action='store_true', help="show microphone Analyze")
+    return parser
+
+DEFAULT_PRINT_OPTIONS = (False)
+
+def main():
+    # set up argparse argument parser and get args
+    parser = setup_parser()
+    args = parser.parse_args()
+
+    use_rec = DEFAULT_PRINT_OPTIONS
+
+    if args.rec:
+	if args.filename:
+	   fn=args.filename[0]
+        else:
+	   fn="foo.wav"
+	p = multiprocessing.Process(target=recAudio, name="REC", args=(fn,))
+	p.start()
+	# Wait 10 seconds for foo
+	time.sleep(10)
+	# Terminate foo
+	p.terminate()
+	# Cleanup
+	p.join()
+        return
+
+    if args.sweep:
+	if args.filename:
+	   fn=args.filename[0]
+        else:
+	   fn="qoo.wav"
+	p = multiprocessing.Process(target=recAudio, name="REC", args=(fn,))
+	p.start()
+        
+	a = AudioFile("/opt/raw/sweep")
+	a.play()
+	a.close()
+
+	# Terminate foo
+	p.terminate()
+	# Cleanup
+	p.join()
+        msg="figlet 'Check %s'" % fn
+        os.system(msg)
+        return
+
+    if args.tick:
+	if args.filename:
+	   fn=args.filename[0]
+        else:
+	   fn="qoo.wav"
+	p = multiprocessing.Process(target=recAudio, name="REC", args=(fn,))
+	p.start()
+        
+	a = AudioFile("/opt/raw/tick")
+	a.play()
+	a.close()
+
+        time.sleep(1)
+        msg="figlet 'Check %s'" % fn
+        os.system(msg)
+
+	# Terminate foo
+	p.terminate()
+	# Cleanup
+	p.join()
+        return
+
+    if args.latency:
+        tickCalc(args.filename[0])
+        return
+
+    if args.play:
+        a = AudioFile(args.filename[0])
+        a.play()
+        a.close()
+        return
+
+    if args.adbtap:
+	if args.filename:
+	   fname=args.filename[0]
+        else:
+           fname="/opt/raw/tick"
+        a=ADB()
+        # tap location for Start REC on APK
+        a.call_adb("shell input tap 200 100")
+        b=MPLAY()
+        b.mplayer(fname)
+        return
+
+    if args.mplayer:
+        playtone()
+        return
+
+    if args.mic:
+        print "Microphone Test"
+	if args.filename:
+	   fn=args.filename[0]
+        else:
+	   fn="mic.wav"
+	p = multiprocessing.Process(target=recAudio, name="REC", args=(fn,))
+	p.start()
+	# Wait 10 seconds for foo
+	time.sleep(63)
+	# Terminate foo
+	p.terminate()
+	# Cleanup
+	p.join()
+        return
+
+    if args.micAnalyze:
+	if args.filename:
+	   fn=args.filename[0]
+        else:
+	   fn="mic.wav"
+        micAnalyze(fn)
+        return
+
+    if args.filename:
+        conv_waveform(args.filename)
+        return
+    f=Figlet(font="slant")
+    print f.renderText(" leau v1.0")
+    print "leau --help for more!"
+    print "export params \033[92mthdb, ylim\033[0m are available"
+    print "export ylim=10000"
+
+
+if __name__ == '__main__':
+    main()
+
+
+#http://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level
+#http://puredata.info/docs/AndroidLatency

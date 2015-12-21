@@ -1,0 +1,17 @@
+#! /bin/bash
+if [[ $1 == "" ]]; then
+    echo "lediff [dir1] [dir2]"
+    echo "  export diff_cmd='' for override"
+    exit
+fi
+diffcmd="-uNr"
+if [[ $diff_cmd != "" ]];then
+    diffcmd=$diff_cmd
+    echo -e "\033[91mlocal diff_cmd is use \033[90m'$diffcmd'\033[0m"
+else
+    echo "diff as '$diffcmd'"    
+fi
+echo "diff in progress please wait ......"
+log=`date +%m%d%H%M`
+diff $diffcmd -X ~/bin/dont_diff $1 $2 > $log.diff
+

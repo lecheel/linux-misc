@@ -1,0 +1,9 @@
+#! /bin/bash
+figlet "ScreenCAP"
+if [[ $1 == "" ]]; then
+adb shell screencap -p /sdcard/xx.png
+adb pull /sdcard/xx.png 
+else
+adb shell screencap -p /sdcard/xx.png
+adb pull /sdcard/xx.png $1
+fi

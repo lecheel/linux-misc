@@ -1,0 +1,16 @@
+#! /bin/bash
+echo "lehelp() "
+echo -e "\033[92m----o/vg-----\033[m"
+echo " o         -- grepsel -vv wrapper"
+echo "           -- vim <f11> lauch grepsel"
+echo -e "vg         -- ag wrapper vs '\033[93mo\033[0m'"
+echo -e "\033[92m----SP-------\033[m"
+echo "sp         -- switch project lists"
+echo "sp -anp xxx"
+echo "sp  [0..9] -- switch project to ..."
+echo " h         -- select for sp selection"
+echo -e "\033[92m----g/d------\033[m"
+echo " g         -- for globle directory"
+echo " d         -- another 'g' fork directory switcher"
+echo "    0/c/s/l/f ....more with h ?"
+

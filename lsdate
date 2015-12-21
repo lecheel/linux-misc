@@ -1,0 +1,20 @@
+#! /bin/bash
+
+if [[ $1 == "" ]]; then
+   echo "find file 1200 min ago"
+   find . -mmin -1200 -ls
+   exit
+fi   
+ 
+if [[ $# -eq 1 ]]; then 
+   echo "search * " $1 days 
+   find ./ -iname "*.*" -atime -$1 -ls
+   exit
+    exit
+fi
+
+if [[ $# -eq 2 ]]; then 
+   echo "search *.$1 " $2 days 
+   find ./ -iname "*.$1" -atime -$2 -ls
+   exit
+fi   

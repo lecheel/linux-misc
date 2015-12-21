@@ -1,0 +1,123 @@
+#! /usr/bin/env python
+"""
+   leau packages power by Lechee.Lai 2o13
+
+"""
+import time
+import matplotlib.pyplot as plt
+import math
+import pylab
+import wave
+import struct
+from struct import pack
+from ctypes import *
+from array import array
+from scipy.io.wavfile import read
+import numpy,scipy
+#from contextlib import contextmanager
+from argparse import ArgumentParser
+import os,sys
+#from smdb import dBTester
+#import subprocess
+import glob
+from PIL import Image
+
+"""
+   use scipy
+   sudo apt-get install python-scipy python-numpy libsndfile1-dev python-audioread python-pyaudio \
+        python-pyalsa python-alsaaudio python-matplotlib python-pyfiglet ...
+
+
+"""
+
+class leau:
+    def __init__(self):
+        """ Init leau Analyze """
+        self.lm = 0  # low limit
+        self.lp = 0  # upper limit
+        pass
+
+    def addWave(self,fname,idx,color,total):
+        rate, wavdata = read(fname)
+        frames=len(wavdata)
+        maxLim = numpy.max( numpy.absolute(wavdata) )
+        duration=frames/float(rate)
+        print "name:%40s size=%6d duration=%d" %(fname,len(wavdata),duration)
+        wav=numpy.fromstring(wavdata, dtype=numpy.int16)
+        pylab.subplot(idx)
+        pylab.title(fname)
+        pylab.grid(True)
+        pylab.subplots_adjust(hspace=.5)
+        pylab.plot(numpy.arange(len(wav))/float(rate),wav,color)
+        if (total !=0):
+            try:
+                yylim = os.environ["ylim"]
+                yylim = int(yylim)
+            except KeyError:
+                yylim = 20000
+                va = [-yylim,yylim]
+                pylab.ylim(va)
+        pylab.ylabel("Amp")
+
+    def wavPng(self,fname):
+        fig = plt.figure("leau v2")
+        fig.suptitle('audio suite')
+        self.addWave(fname,311,"b-",1)
+        pngName=fname[:-3]+"png"
+        pylab.savefig(pngName,dpi=130)
+        img=Image.open(pngName)
+        box=(0,40,1024,270)
+        area=img.crop(box)
+        area.save(pngName,'png')
+#        pylab.show()
+
+
+    def SmartGen(self):
+        for files in glob.glob("*.wav"):
+            pngfile = files[:-3]+"png"
+            if os.path.exists(pngfile):
+                print "Skip %s" % files
+            else:
+                print files
+                self.wavPng(files)
+
+
+    def aaa(self,fname):
+        pngfile = fname[:-3]+"png"
+        self.wavPng(fname)
+
+
+def setup_parser():
+    parser = ArgumentParser(description='leau_SRV\033[92mv2\033[0m for Audio processing....', add_help=False)
+    parser.add_argument('--help', action='help', help='show this help message and exit')
+    parser.add_argument('filename', nargs="*", help='Analysis Wavefrom')
+    parser.add_argument('-ge','--gen', action='store_true', help="gen waveform ...")
+    parser.add_argument('-aa','--aaa', action='store_true', help="gen waveform ...")
+    return parser
+
+DEFAULT_PRINT_OPTIONS = (False)
+def main():
+    # set up argparse argument parser and get args
+    parser = setup_parser()
+    args = parser.parse_args()
+
+    use_rec = DEFAULT_PRINT_OPTIONS
+    au=leau()
+
+    if args.gen:
+        au.SmartGen()
+        return
+
+    if args.aaa:
+        if args.filename:
+            fn=args.filename[0]
+            au.aaa(fn)
+
+if __name__ == '__main__':
+    main()
+
+
+#http://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level
+#http://puredata.info/docs/AndroidLatency
+
+#print help(leau)

@@ -1,0 +1,8 @@
+#! /bin/bash
+if [[ $1 == "" ]]; then
+    echo "Usage:"
+    echo -e "   \033[91mmeld \033[92mdir1 \033[93mdir2\033[0m"
+    echo "   meld file1 file2"
+    exit
+fi
+    meld $1 $2 > /dev/null 2>&1 &

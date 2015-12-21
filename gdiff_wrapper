@@ -1,0 +1,23 @@
+#! /bin/bash
+# un-comment one diff tool you'd like to use
+
+# side-by-side diff with custom options:
+#/usr/bin/sdiff -w150 -l "$2" "$5" 
+
+# using Meld 
+# meld "$2" "$5"
+
+
+git ls-files -m
+echo "--------------------------------------"
+# using VIM
+vimdiff "$2" "$5"
+echo -e ">>>\033[94m$1\033[0m"
+echo -e "\033[92mControl-C\033[0m for break other for \033[93mnext >>> diff <<<\033[0m."
+read -p ""
+# case $yn in
+#     [Yy]* ) echo "Y";;
+#     [Nn]* ) exit;;
+#          *) echo "xxx";;
+# esac
+# 

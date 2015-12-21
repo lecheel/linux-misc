@@ -1,0 +1,7 @@
+#! /bin/bash
+#iptables -I INPUT $1 -s -j DROP
+
+echo "Block IP 115.123.*.* -> 115.123.0.0/255.255.0.0"
+echo -e "iptables -I INPUT 192.xxxx -s -j DROP"
+echo -e "sudo iptables -L -v   << View Blocked IP"
+echo "sudo iptables -F"

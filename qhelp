@@ -1,0 +1,167 @@
+#! /bin/bash
+
+txtblk='\033[30m' # Black - Regular
+txtred='\033[31m' # Red
+txtgrn='\033[32m' # Green
+txtylw='\033[33m' # Yellow
+txtblu='\033[34m' # Blue
+txtpur='\033[35m' # Purple
+txtcyn='\033[36m' # Cyan
+txtwht='\033[37m' # White
+bldblk='\033[30m' # Black - Bold
+bldred='\033[31m' # Red
+bldgrn='\033[32m' # Green
+bldylw='\033[33m' # Yellow
+bldblu='\033[34m' # Blue
+bldpur='\033[35m' # Purple
+bldcyn='\033[36m' # Cyan
+bldwht='\033[37m' # White
+unkblk='\033[30m' # Black - Underline
+undred='\033[31m' # Red
+undgrn='\033[32m' # Green
+undylw='\033[33m' # Yellow
+undblu='\033[34m' # Blue
+undpur='\033[35m' # Purple
+undcyn='\033[36m' # Cyan
+undwht='\033[37m' # White
+bakblk='\033[40m' # Black - Background
+bakred='\033[41m' # Red
+bakgrn='\033[42m' # Green
+bakylw='\033[43m' # Yellow
+bakblu='\033[44m' # Blue
+bakpur='\033[45m' # Purple
+bakcyn='\033[46m' # Cyan
+bakwht='\033[47m' # White
+txtrst='\033[0m'  # Text Reset
+
+if [[ $1 == "1" ]]; then
+    echo -e "${txtred}F1${txtrst}-DIR ${txtgrn}F2/F3${txtrst} Search Prev/Next ${txtylw}F4${txtrst}-Highlight $txtbluF5${txtrst}-Column ${txtcyn}F6${txtrst}- F7- F8- ${txtred}F9-${txtrst}gitgutter ${txtgrn}F10${txtrst}-MRU ${txtylw}F11${txtrst}-vgrepView F12"
+    exit
+fi
+
+if [[ $1 == "" ]]; then
+    clear
+    echo " "
+    echo -e "  |  ${txtpur}quickHelp${txtrst} for ${txtgrn}vim${txtrst}"
+    echo "--+-----------------------------:"
+    echo -e "  -- gitgutter  ${txtgrn}Leader ]h${txtrst}  for next Hunk"
+    echo -e "  --            ${txtgrn}Leader [h${txtrst}  for pervious hunk"
+    echo -e "  -- vimdiff    ${txtgrn}]c${txtrst} for next diff"
+    echo -e "  --            ${txtgrn}[c${txtrst} for pervious diff"
+    echo -e "  -- dp -->     diff put to other"
+    echo -e "  -- do <--     diff obtain" 
+    echo -e "  -- <C-W><C-W> window switch, ${txtred}<C-W>J <C-W>L${txtrst}  HJKL vertical split to horizontal split"
+    echo -e "  -- folder     ${txtylw}zo zc zR${txtrst} "
+
+    echo -e "  -- F10 Mru"
+    echo -e "  -- F8 ${txtylw}TlistToggle${txtrst}"
+    echo -e "  -- F1 ${txtgrn}NERDTree${txtrst}"
+    echo -e "  -- F2 cs find d Called"
+    echo -e "  -- F3 cs find e same as egrep"
+    echo -e "  -- F4 cs find c Calling"
+    echo -e "  -- ${txtred}**${txtrst} F4 search ${txtpru}highlight${txtrst}"
+    echo -e "  -- F5 paste column"
+
+    echo -e "  -- colume edit ${txtylw}<C-V>${txtrst} (arrow for selection) press ${txtylw}I${txtrst} type ... ${txtgrn}<ESC><ESC>${txtrst}  magic #!@#$%."
+    echo -e "  -- multi-cursor ${txtgrn}<C-N> v c s <ESC>${txtrst} exit the multi-cursor mode VISUAL[${txtred}v${txtrst}]->NORM"
+
+    echo -e " "
+    echo -e "  -- Mark ${txtred}ma <---> \`a${txtrst}"
+    echo -e "  -- gc    tComment"
+    echo -e " "
+
+    echo "        git ls-files -o --exclude-standard"
+    echo -e "  -- git diff --word-diff"
+    echo -e "  -- port select --list python"
+    echo -e "  -- sudo port select --set python python27"
+    echo -e "  -- sudo port select --set python python35"
+    echo -e "  github ${txtgrn}git remote set-url origin git@github.com:lecheel/repo.git${txtrst}"
+
+    exit
+fi
+
+if [[ $1 == "vim" ]]; then
+    clear
+    echo "----+----------vim tips ---------------"
+    echo "add every line "," in the file"
+    echo -e "  -- ${txtred}:%s/$/,/ ${txtrst}" 
+    echo -e "  -- ${txtred}:'<,'>s/$/,/ ${txtrst}   -- in visual mode" 
+
+    echo "Delete lines beginning"
+    echo -e "  -- ${txtgrn}:g/^foo/d ${txtrst}"
+    echo "Remove ^M"
+    echo -e "  -- ${txtylw}:%s/${txtrst}<C-V><C-M>${txtylw}//g ${txtrst}"
+    echo -e "  -- delete operation      dt<SPACE> dfX     Delete unTil SPACE, Delete Find X"
+    echo "OPERATOR"
+    echo -e "  -- cscope     [C-\] ${txtred}c${txtrst}{calling} ${txtgrn}d${txtrst}{called} ${txtylw}e${txtrst}{grep} $txtblug${txtrst}{defintion} :cs"
+    echo -e "  -- cscope     <leader>${txtred}s${txtgrn}[cdeg...]${txtrst}"
+    echo -e "  -- easymotion <SPC> ${txtgrn}s/f/F${txtrst} "
+    echo -e "  -- vimsurround  cs\"' ${txtylw}\"->'${txtrst}   ds\" " 
+    echo -e "  -- fugitive   <leader>${txtred}g${txtgrn}[dlsbg]${txtrst}  d-diff l-log s-status b-bruanch g-grep"
+    echo -e "  -- Cdo        set hidden, grep foo, Cdo s/foo/bar/c | update http://vimcasts.org/episodes/project-wide-find-and-replace/" 
+    echo ""
+fi
+
+if [[ $1 == "e" ]]; then
+    clear
+    echo "----+----------emacs tips with evil---------------"
+    echo "add every line "," in the file"
+    echo -e "  -- ${txtred}:%s/$/,/ ${txtrst}" 
+    echo -e "  -- ${txtred}:'<,'>s/$/,/ ${txtrst}   -- in visual mode" 
+
+    echo "Delete lines beginning"
+    echo -e "  -- ${txtgrn}:g/^foo/d ${txtrst}"
+    echo "Remove ^M"
+    echo -e "  -- ${txtylw}:%s/${txtrst}<C-V><C-M>${txtylw}//g ${txtrst}"
+    echo -e "  -- delete operation      dt<SPACE> dfX     Delete unTil SPACE, Delete Find X"
+    echo -e "  -- ace-jump  <SPC>"
+    echo ""
+    echo -e "  M-x list-package   -- install for package"
+    echo "----------------------------------------------"
+    echo -e "  C-x SPC   rectangle mark mode"
+    echo -e "  C-x r d   -- delete selected rectangle "
+    echo -e "  C-x r k   -- kill rectangle"
+    echo -e "  C-x r t   -- insert rectangle"
+    echo -e "  C-x r y   -- yank rectangle"
+    echo ""
+    echo -e "  C-x n/p   -- git gutter Next/Pervios hunk :: g/n/s/p"
+    echo -e "  M-;       -- comment/uncomment ,ci ,cc ,cl for quick comment evil-nerd-commenter"	
+    echo "  wgrep workflow "
+    echo "  using ack/ag/grep   with wgrep/wgrep-ack/wgrep-ag mode package found"
+    echo -e "  grep-find xxx /  <${txtred}wgrep-change-to-wgrep-mode${txtrst}>/.modify./<${txtgrn}wgrep-finish-edit${txtrst}>/<${txtylw}wgrep-save-all-buffers${txtrst}>"     
+    echo -e "  M-s[${txtylw}ow.${txtrst}]   -- Search occur/word/Symbol "
+fi
+
+
+if [[ $1 == "gdb" ]]; then
+    echo "tips for GDB"
+    echo "----------------------------------------------" 
+    echo -e "sudo apt-get install ${txtylw}cdgb${txtrst}"
+    echo -e "cgdb foo"
+    echo -e "(gdb) r arg0 arg1    <- Read argument "
+    echo -e "(gdb) <${txtgrn}ESC${txtrst}> -- source window    ${txtgrn}i${txtrst} -- debug window"
+    echo -e "(gdb) b main <-- breakpoint"
+    echo -e "(gdb) n      <-- next"
+    echo -e "objdump xxx  <--- looking for symbol"
+    echo -e "info b       <-- breakpoints information"
+fi
+
+if [[ $1 == "u" ]]; then
+    echo "hint for ubuntu"
+    echo "tip1:  sudo apt-get install tig git htop screen vim-nox meld gimp mc ctags figlet curl libssl-dev ccache"
+    echo "tip2:  disable Super Key -- gsettings set org.compiz.integrated show-hud \"['']\""
+    echo "    :                    -- dconf write /org/compiz/profiles/unity/plugins/unityshell/show-launcher '\"\"'"
+    echo "    :  quick classic     -- sudo apt-get install  ibus-table-quick ibus-table-quick-classic"
+    echo "    :  sudo apt-get install automake "
+    echo "    :  sudo apt-get build-dep silversearcher-ag"
+    echo "    :  env WINEARCH=win32 WINEPREFIX=~/.wine32 winetricks dotnet20"
+    echo "    :  sudo dpkg-reconfigure virtualbox-dkms"
+    echo "tip3:  disable scrollbar -- gsettings set com.canonical.desktop.interface scrollbar-mode normal"
+    echo "tip4:  chrome left icon  -- gconftool-2 --set /apps/metacity/general/button_layout --type string \"close,minimize,maximize:\""
+    echo "tip5:  mplayer           -- mplayer -vo vaapi:dm=0 -va vaapi"
+    echo "tip6:  skype             -- sudo apt-get install sni-qt:i386"
+    echo "tip7:  vDesk number      -- gsettings set org.compiz.core:/org/compiz/profiles/unity/plugins/core/ hsize 3" 
+    echo "tip8:  debugfs           -- mount -t debugfs debug /mnt"
+    echo "tip9:  javac             -- sudo update-alternatives --config javac "
+fi    
+

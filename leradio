@@ -1,0 +1,107 @@
+#! /bin/bash
+
+if [[ $1 == "" ]]; then
+    echo "  ____           _ _        "
+    echo " |  _ \ __ _  __| (_) ___  " 
+    echo " | |_) / _\` |/ _\` | |/ _ \ " 
+    echo " |  _ < (_| | (_| | | (_) |"
+    echo " |_| \_\__,_|\__,_|_|\___/ "
+    echo " "
+    echo " 0 -- stop"
+    echo " 1 -- I-Like (流行網)"
+    echo " 2 -- I-Radio (Music)"
+    echo " 3 -- rthk radio1"
+    echo " 4 -- rthk radio2"
+    echo " 5 -- UFO"
+    echo " 6 -- NEWs98"
+    echo " 7 -- I-Like (新聞網)"
+
+ 
+    OS=`uname`
+    if [ $OS == "Darwin" ]; then
+	echo "check mplayer in $OS"
+	pgrep mplayer
+	pgrep mimms
+    else
+	pidof mplayer
+	pidof mimms
+    fi
+fi
+
+if [[ -f $1 ]]; then
+   figlet "play Radio"
+   echo $1
+   mplayer $1 > /dev/null 2>&1 &
+fi
+
+
+if [[ $1 == "0" ]]; then
+#   echo -e "stop \033[94mradio\033[0m"
+   figlet "STOP Radio"
+   killall mplayer > /dev/null 2>&1
+   killall mimms > /dev/null 2>&1
+   exit
+fi
+
+
+if [[ $1 == "1" ]]; then
+   echo -e "* play radio \033[092mI-Like\033[0m"
+   killall mplayer > /dev/null 2>&1
+   mplayer mmsh://bcr.media.hinet.net/RA000009?MSWMExt=.asf > /dev/null 2>&1 &
+   exit
+fi
+
+if [[ $1 == "2" ]]; then
+   echo -e "* play radio \033[093mI-Radio\033[0m"
+   killall mplayer > /dev/null 2>&1
+   mplayer mmsh://bcr.media.hinet.net/RA000007?MSWMExt=.asf > /dev/null 2>&1 &
+   exit
+fi
+
+if [[ $1 == "3" ]]; then
+   echo -e "* play radio \033[093mRTHK-Radio1\033[0m"
+   killall mplayer > /dev/null 2>&1
+   mplayer  http://stm.rthk.hk/radio1 > /dev/null 2>&1 &
+   exit
+fi
+
+
+if [[ $1 == "4" ]]; then
+   echo -e "* play radio \033[093mRTHK-\033[0m"
+   killall mplayer > /dev/null 2>&1
+   mplayer  http://stm.rthk.hk/radio2 > /dev/null 2>&1 &
+   exit
+fi
+
+
+if [[ $1 == "5" ]]; then
+   echo -e "* play radio \033[093mUFO\033[0m"
+   killall mplayer > /dev/null 2>&1
+   mplayer mmsh://bcr.media.hinet.net/RA000072?MSWMExt=.asf > /dev/null 2>&1 &
+   exit
+fi
+
+
+if [[ $1 == "6" ]]; then
+   echo -e "* play radio \033[093mNEWs98\033[0m"
+   killall mplayer > /dev/null 2>&1
+   mplayer mmsh://bcr.media.hinet.net/RA000073?MSWMExt=.asf > /dev/null 2>&1 &
+   exit
+fi
+
+
+if [[ $1 == "7" ]]; then
+   echo -e "* play radio \033[093mI-Radio NEWs\033[0m"
+   killall mplayer > /dev/null 2>&1
+   mplayer mmsh://bcr.media.hinet.net/RA000008?MSWMExt=.asf > /dev/null 2>&1 &
+   exit
+fi
+
+if [[ $1 == "rec" ]]; then
+   echo -e "* REC radio \033[093mxxx\033[0m"
+   info=$(date +'%Y%m%d_%H%M')"_RA009.asf"
+   figlet "REC..."
+   killall mplayer > /dev/null 2>&1
+   mimms -t 60 mms://bcr.media.hinet.net/RA000009 /tmp/$info > /dev/null 2>&1 &
+   exit
+fi

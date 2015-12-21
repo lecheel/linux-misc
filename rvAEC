@@ -1,0 +1,322 @@
+#! /usr/bin/env python
+
+""" leau packages power by Lechee.Lai 2o13 """
+# 
+# 
+#
+import wave
+import alsaaudio
+from scipy.io.wavfile import read
+import math
+import pylab
+import pyaudio
+import numpy
+import time
+import pylab
+import multiprocessing
+import os,sys
+from argparse import ArgumentParser
+#from scipy import signal
+#import matplotlib.pyplot as plt
+
+
+from matplotlib.pyplot import figure
+from matplotlib.table import table
+import matplotlib as mpl
+
+import math, wave, array
+from ctypes import *
+from contextlib import contextmanager
+
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+def py_error_handler(filename, line, function, err, fmt):
+    pass
+
+c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+@contextmanager
+def noalsaerr():
+    asound = cdll.LoadLibrary('libasound.so.2')
+    asound.snd_lib_error_set_handler(c_error_handler)
+    yield
+    asound.snd_lib_error_set_handler(None)
+class AudioFile:
+    chunk = 1024
+
+    def __init__(self, file):
+        """ Init audio stream """ 
+        with noalsaerr():
+            self.wf = wave.open(file, 'rb')
+            self.p = pyaudio.PyAudio()
+        self.stream = self.p.open(
+            format = self.p.get_format_from_width(self.wf.getsampwidth()),
+            channels = self.wf.getnchannels(),
+            rate = self.wf.getframerate(),
+            output = True
+        )
+
+    def play(self):
+        """ Play entire file """
+        data = self.wf.readframes(self.chunk)
+        while data != '':
+            self.stream.write(data)
+            data = self.wf.readframes(self.chunk)
+
+    def close(self):
+        """ Graceful shutdown """ 
+        self.stream.close()
+        self.p.terminate()
+
+
+def tone(freq,volume,duration):
+#    duration = 3 # seconds
+#    freq = 440 # of cycles per second (Hz) (frequency of the sine waves)
+#    volume = 100 # percent
+    data = array.array('h') # signed short integer (-32768 to 32767) data
+    sampleRate = 44100 # of samples per second (standard)
+    numChan = 1 # of channels (1: mono, 2: stereo)
+    dataSize = 2 # 2 bytes because of using signed short integers => bit depth = 16
+    numSamplesPerCyc = int(sampleRate / freq)
+    numSamples = sampleRate * duration
+    for i in range(numSamples):
+	sample = 32767 * float(volume) / 100
+	sample *= math.sin(math.pi * 2 * (i % numSamplesPerCyc) / numSamplesPerCyc)
+	data.append(int(sample))
+    fname="Sine_%dHz_%03d.wav" %(freq,volume)
+    print fname   
+    f = wave.open(fname, 'w')
+    f.setparams((numChan, dataSize, sampleRate, numSamples, "NONE", "Uncompressed"))
+    f.writeframes(data.tostring())
+    f.close()
+
+
+def cut(fin,t0,t1):
+    fout="%s_cut.wav" % fin[:-4]
+    win= wave.open(fin, 'rb')
+    wout= wave.open(fout, 'wb')
+
+    # cut audio between one and two seconds t0 <--> t1
+    s0, s1= int(t0*win.getframerate()), int(t1*win.getframerate())
+    win.readframes(s0) # discard
+    print win.getparams()
+    duration=win.getparams()[3]/win.getparams()[2]
+    print "%ds" % duration
+    frames= win.readframes(s1-s0)
+
+    wout.setparams(win.getparams())
+    wout.writeframes(frames)
+
+    win.close()
+    wout.close()
+    cmd="rm %s" %fin
+    os.system(cmd)
+    cmd="mv %s %s" %(fout,fin)
+    os.system(cmd)
+
+def pcm2wav(fin,freq):
+    #freq=16000
+    pcmfile = open(fin,'rb')
+    pcmdata = pcmfile.read()
+    fout = "%s.wav" %fin[:-4]
+    wavfile = wave.open(fout,'wb')
+    wavfile.setparams((2, 1, freq, 0, 'NONE', 'NONE'))
+    wavfile.writeframes(pcmdata)
+    pcmfile.close()
+    wavfile.close()
+
+def recAudio(fname):
+    inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE)
+    inp.setchannels(1)
+    inp.setrate(44100)
+    inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+    inp.setperiodsize(1024)
+
+    w = wave.open(fname, 'w')
+    w.setnchannels(1)
+    w.setsampwidth(2)
+    w.setframerate(44100)
+
+    while True:
+	l, data = inp.read()
+	w.writeframes(data)
+
+
+def toneGen():
+    for i in range(14):
+	freq=400+i*200
+	tone(freq,100,2)
+	tone(freq,44.5,2)
+	tone(freq,14.2,2)
+
+
+def spk_mic(fn):
+    p = multiprocessing.Process(target=recAudio, name="REC", args=(fn,))
+    p.start()
+    aplay()
+    p.terminate()
+    # Cleanup
+    p.join()
+    os.system("figlet REC DONE")
+    return
+
+def agc_check(fn,ref_tone):
+    p = multiprocessing.Process(target=recAudio, name="REC", args=(fn,))
+    p.start()
+    a=AudioFile(ref_tone)
+    a.play()
+    a.close()
+    # Terminate foo
+    p.terminate()
+    # Cleanup
+    p.join()
+    os.system("figlet AGC check DONE")
+    return
+
+def agc_check30(fn):
+    tone=["/opt/raw/agc_tone_10.wav","/opt/raw/agc_tone_20.wav","/opt/raw/agc_tone_30.wav"]
+    for i in range(3):
+        agc_check(fn,tone[i])
+        time.sleep(0.5)
+
+def agc_check3(fn):
+    tone=["/opt/raw/leagc.wav"]
+    agc_check(fn,tone[0])
+
+def ratioDB(R):
+    Max_dB = 120;
+    Min_dB = -120;
+    R = max(R, 10^(Min_dB/10));
+    R = min(R, 10^(Max_dB/10));
+    PdB = 10*log10(R);
+    return PdB
+
+def rvAEC(fin,fspk):
+
+    fig = pylab.figure("rvAEC")
+    rate, wdata = read(fin)
+    max = numpy.max( numpy.absolute(wdata))
+    frames=len(wdata)
+    duration=frames/float(rate)
+    print "%20s duration %6.2f %d" % (fin,duration,frames)
+    data_db = numpy.array([])
+
+    FrameTime = 10
+    frame_size = FrameTime * rate / 1000
+    number_of_bands = frame_size
+    fft_size = 2 * frame_size
+    freq_step = rate/fft_size      # 50
+    low_band = round(50/freq_step)
+    high_band = number_of_bands
+    bandidx = []
+    Freq = []
+    for x in pylab.arange(low_band,(high_band/2)-1):
+        Freq= x
+    Freq = x
+    mic_db = numpy.array([])
+    chunk=frame_size
+    for i in range(len(wdata) / chunk):
+        values = numpy.array( wdata[i*chunk : (i+1)*chunk] )
+        # normalize [0, 1]
+        values = values / float(max)
+
+        values = numpy.power(values, 2)
+        rms = numpy.sqrt( numpy.mean(values) )
+        # decibel
+        db = 20 * numpy.log10( (1e-20+(rms)) ) #/ float(max)
+        mic_db = numpy.append(mic_db, db)
+
+    rate, wdata = read(fspk)
+    max = numpy.max( numpy.absolute(wdata))
+    frames=len(wdata)
+    duration0=frames/float(rate)
+    print "%20s duration %6.2f %d" % (fspk,duration0,frames)
+    if duration != duration0:
+       print "\033[93mplease make sure 2 files have same duration for this operator\033[0m can use -c option"
+       return
+    spk_db = numpy.array([])
+    chunk=frame_size
+    for i in range(len(wdata) / chunk):
+        values = numpy.array( wdata[i*chunk : (i+1)*chunk] )
+        # normalize [0, 1]
+        values = values / float(max)
+
+        values = numpy.power(values, 2)
+        rms = numpy.sqrt( numpy.mean(values) )
+        # decibel
+        db = 20 * numpy.log10( (1e-20+(rms)) ) #/ float(max)
+        spk_db = numpy.append(spk_db, db)
+
+    pylab.subplots_adjust(hspace=.5)
+
+    pylab.subplot(411)
+    pylab.grid(True)
+    pylab.title("mic-spk")
+    l,=pylab.plot(numpy.arange(len(mic_db)),mic_db-spk_db,"b-",label="=micdB-spkdB")
+    pylab.legend()
+
+    pylab.subplot(412)
+    pylab.grid(True)
+    pylab.title("rv Sweep spkDB")
+    pylab.plot(numpy.arange(len(spk_db)),spk_db,"g-")
+
+    pylab.subplot(411)
+    pylab.title("rvAEC")
+    pylab.grid(True)
+    pylab.title("micDB")
+    l,=pylab.plot(numpy.arange(len(mic_db)),mic_db,"r",label="mic_dB")
+    pylab.legend()
+#    pylab.gca()
+    xlist=pylab.arange(0, 1, 0.01)
+    ylist=[]
+    for x in xlist:
+#       plot(4000*x,3*math.exp(x)-18,'r-') # % a line that roughly describes the aec limitation
+        y=3*math.exp(x)-18
+        ylist.append(y)
+    pylab.plot(xlist,ylist,"r-")
+
+    pylab.subplot(414)
+    pylab.grid(True)
+    pylab.title("semilogx  mic-spk dB")
+#    f, spec = signal.welch(numpy.arrage(len(spk_db),10-e3,"xxxx",1024))
+    pylab.semilogx(numpy.arange(len(spk_db)),mic_db-spk_db,"c")
+#    pylab.savefig('info',dpi=300)
+    pylab.show()
+
+#spk_mic("xxx.wav")
+#agc_check("agc00.wav")
+#rvAEC("mic.wav","s.wav")
+#rvAEC("s.wav","mic.wav")
+
+def setup_parser():
+    parser = ArgumentParser(description='rvAEC check micIn,micOut....', add_help=False)
+    parser.add_argument('--help', action='help', help='show this help message and exit')
+    parser.add_argument('filename', nargs="*", help='Analysis Wavefrom')
+    parser.add_argument('-c','--cut', action='store_true', help="cut WAV file 0~10s")
+    parser.add_argument('-a','--agccheck', action='store_true', help="check AGC is available?")
+    return parser
+
+DEFAULT_PRINT_OPTIONS = (False)
+
+def main():
+    # set up argparse argument parser and get args
+    parser = setup_parser()
+    args = parser.parse_args()
+
+    use_rec = DEFAULT_PRINT_OPTIONS
+
+    if args.cut:
+        cut(args.filename[0],0,10)
+        return
+
+    if args.agccheck:
+        agc_check3(args.filename[0])
+        return
+
+    if args.filename:
+        rvAEC(args.filename[0],args.filename[1])
+#        rvAEC(args.filename[0],"/opt/raw/sweep44.wav")
+        return
+    print "rvAEC --help for more"
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,169 @@
+#! /usr/bin/env python
+
+from argparse import ArgumentParser
+import os,sys
+import subprocess
+
+
+def lepci():
+    pci = subprocess.Popen(['lspci'],stdout=subprocess.PIPE)
+    pci.wait()
+    lepci = pci.stdout.readlines()
+    # PFA = Bus + DEV + FUNC (FPA&0x0f8)>>3
+    for ii in lepci:
+        pfa_ = ii[:7]
+        A1=pfa_[:2]
+        A2=pfa_[3:5]
+        A3=pfa_[6:7]
+        pfa = (int(A1,16)<<8)+(int(A2,16)<<3)+(int(A3,16))
+        print "(\033[92m%04X\033[0m) %s"%(pfa,ii[:-1])
+
+def checkZero(zz):
+    if zz == "00":
+        zz = "\033[90m00\033[0m"
+    if zz == "ff":
+        zz = "\033[96mff\033[0m"
+    return zz
+
+def parseDAT(xx,ck):
+    AAA=xx[:2]
+    A0=xx[4:6]
+    A1=xx[7:9]
+    A2=xx[10:12]
+    A3=xx[13:15]
+    A4=xx[16:18]
+    A5=xx[19:21]
+    A6=xx[22:24]
+    A7=xx[25:27]
+    A8=xx[28:30]
+    A9=xx[31:33]
+    AA=xx[34:36]
+    AB=xx[37:39]
+    AC=xx[40:42]
+    AD=xx[43:45]
+    AE=xx[46:48]
+    AF=xx[49:51]
+    if ck:
+        A0=checkZero(A0)
+        A1=checkZero(A1)
+        A2=checkZero(A2)
+        A3=checkZero(A3)
+        A4=checkZero(A4)
+        A5=checkZero(A5)
+        A6=checkZero(A6)
+        A7=checkZero(A7)
+        A8=checkZero(A8)
+        A9=checkZero(A9)
+        AA=checkZero(AA)
+        AB=checkZero(AB)
+        AC=checkZero(AC)
+        AD=checkZero(AD)
+        AE=checkZero(AE)
+        AF=checkZero(AF)
+    print "\033[93m%s\033[0m| %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" %(AAA,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,AA,AB,AC,AD,AE,AF)
+
+
+def pfaDump(pfa,ck):
+    ibus=(int(pfa,16)&0xff00)>>8
+    idev=(int(pfa,16)&0x0f8)>>3
+    ifun=(int(pfa,16)&0x07)
+    ipfa="%02x:%02x.%x" %(ibus,idev,ifun)
+#    cmd="sudo lspci -s %s -xxx" %ipfa 
+#    os.system(cmd)
+    pci = subprocess.Popen(['sudo','lspci','-s',ipfa,'-xxx'],stdout=subprocess.PIPE)
+    pci.wait()
+    xpci = pci.stdout.readlines()
+    idx=0
+    for ii in xpci:
+       if idx==0:
+            pfa_ = ii[:7]
+            A1=pfa_[:2]
+            A2=pfa_[3:5]
+            A3=pfa_[6:7]
+            pfa = (int(A1,16)<<8)+(int(A2,16)<<3)+(int(A3,16))
+            print "\033[92m%04X\033[94m %s\033[m"%(pfa,ii[:-1])
+            print "\033[93m  | 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\033[0m"
+            print "\033[93m--+------------------------------------------------\033[0m"
+       else:
+            if idx<17:
+                parseDAT(ii[:-1],ck)
+       idx=idx+1
+
+def parseDAT32(xx,ck):
+    AAA=xx[:2]
+    A0=xx[4:6]
+    A1=xx[7:9]
+    A2=xx[10:12]
+    A3=xx[13:15]
+    A4=xx[16:18]
+    A5=xx[19:21]
+    A6=xx[22:24]
+    A7=xx[25:27]
+    A8=xx[28:30]
+    A9=xx[31:33]
+    AA=xx[34:36]
+    AB=xx[37:39]
+    AC=xx[40:42]
+    AD=xx[43:45]
+    AE=xx[46:48]
+    AF=xx[49:51]
+    print "\033[93m%s\033[0m| %s%s%s%s %s%s%s%s %s%s%s%s %s%s%s%s" %(AAA,A3,A2,A1,A0,A7,A6,A5,A4,AB,AA,A9,A8,AF,AE,AD,AC)
+
+def pfaDump32(pfa,ck):
+    ibus=(int(pfa,16)&0xff00)>>8
+    idev=(int(pfa,16)&0x0f8)>>3
+    ifun=(int(pfa,16)&0x07)
+    ipfa="%02x:%02x.%x" %(ibus,idev,ifun)
+    pci = subprocess.Popen(['sudo','lspci','-s',ipfa,'-xxx'],stdout=subprocess.PIPE)
+    pci.wait()
+    xpci = pci.stdout.readlines()
+    idx=0
+    for ii in xpci:
+       if idx==0:
+            pfa_ = ii[:7]
+            A1=pfa_[:2]
+            A2=pfa_[3:5]
+            A3=pfa_[6:7]
+            pfa = (int(A1,16)<<8)+(int(A2,16)<<3)+(int(A3,16))
+            print "\033[92m%04X\033[94m %s\033[m"%(pfa,ii[:-1])
+            print "\033[93m  | 03020100 07060504 0B0A0908 0F0E0D0C\033[0m"
+            print "\033[93m--+------------------------------------\033[0m"
+       else:
+            if idx<17:
+                parseDAT32(ii[:-1],ck)
+       idx=idx+1
+
+
+def setup_parser():
+    parser = ArgumentParser(description='lepci\033[92m v0\033[0m for BiOS guy', add_help=False)
+    parser.add_argument('--help', action='help', help='show this help message and exit')
+    parser.add_argument('pfa', nargs="*", help='Analysis PCI PFA vs lspci')
+    parser.add_argument('-dw','--dword',  action='store_true', help='show in 32bit (default in byte)')
+    return parser
+
+def main():
+    # set up argparse argument parser and get args
+    parser = setup_parser()
+    args = parser.parse_args()
+
+    if args.dword:
+        for ipfa in args.pfa:
+            pfaDump32(ipfa,True)
+            print ""
+        return
+
+    if args.pfa:
+        for ipfa in args.pfa:
+            pfaDump(ipfa,True)
+            print ""
+        return
+
+    print "lepci v0.1 -=\033[93mlspci wrapper\033[0m=-"
+    print "-------------------------------"
+    lepci()
+
+if __name__ == '__main__':
+    main()
+
+
+

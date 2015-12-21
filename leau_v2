@@ -1,0 +1,813 @@
+#! /usr/bin/env python
+"""
+   leau packages power by Lechee.Lai 2o13
+
+"""
+import multiprocessing
+import time
+from threading import Timer
+from scipy.io.wavfile import read
+import matplotlib.pyplot as plt
+import math
+import pylab
+import pyaudio
+import wave
+import struct
+from struct import pack
+from ctypes import *
+from array import array
+import alsaaudio
+import numpy,scipy
+from contextlib import contextmanager
+from argparse import ArgumentParser
+import os,sys
+from smdb import dBTester
+import subprocess
+
+"""
+   use scipy
+   sudo apt-get install python-scipy python-numpy libsndfile1-dev python-audioread python-pyaudio \
+        python-pyalsa python-alsaaudio python-matplotlib python-pyfiglet python-setuptools ...
+
+   install scikit-audiolab
+   cd scikits/audiolab
+   sudo python setup.py (install)
+
+"""
+ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+
+def py_error_handler(filename, line, function, err, fmt):
+    pass
+
+c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+
+@contextmanager
+def noalsaerr():
+    asound = cdll.LoadLibrary('libasound.so.2')
+    asound.snd_lib_error_set_handler(c_error_handler)
+    yield
+    asound.snd_lib_error_set_handler(None)
+
+def linspace(start, stop, n):
+    if n == 1:
+        yield stop
+        return
+    h = (stop - start) / (n - 1)
+    for i in range(n):
+        yield start + h * i
+
+ADEV = [ "sysdefault:CARD=Set", "sysdefault:CARD=USB" ]
+
+class aplay2:
+    def aplay(self, command,idx):
+        command_text = 'aplay -D %s %s &' % (ADEV[idx],command)
+        os.system(command_text)
+        return 
+
+class aplay:
+    def aplay(self, command,idx):
+        print "Player via \033[92m%s\033[0m " % ADEV[idx]
+        command_result = ''
+        command_text = 'aplay -D %s %s' % (ADEV[idx],command)
+        pp = subprocess.Popen(command_text, shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
+        return pp.communicate()
+
+class ADB:
+    def call_adb(self, command):
+        command_result = ''
+        command_text = 'adb %s' % command
+	results = os.popen(command_text, "r")
+        while 1:
+            line = results.readline()
+            if not line: break
+            command_result += line
+        return command_result
+
+class AudioFile:
+    chunk = 1024
+
+    def __init__(self, file):
+        """ Init audio stream """ 
+        with noalsaerr():
+            self.wf = wave.open(file, 'rb')
+            self.p = pyaudio.PyAudio()
+            self.stream = self.p.open(
+            format = self.p.get_format_from_width(self.wf.getsampwidth()),
+            channels = self.wf.getnchannels(),
+            rate = self.wf.getframerate(),
+            output = True
+        )
+
+    def play(self):
+        """ Play entire file """
+        data = self.wf.readframes(self.chunk)
+        while data != '':
+            self.stream.write(data)
+            data = self.wf.readframes(self.chunk)
+
+    def close(self):
+        """ Graceful shutdown """ 
+        self.stream.close()
+        self.p.terminate()
+
+class leau:
+    def __init__(self):
+        """ Init leau Analyze """
+        self.lm = 0  # low limit
+        self.lp = 0  # upper limit
+        pass
+
+    def cut(self,fin,t0,t1):
+        fout="%s_cut.wav" % fin[:-4]
+        win= wave.open(fin, 'rb')
+        wout= wave.open(fout, 'wb')
+
+        # cut audio between one and two seconds t0 <--> t1
+        s0, s1= int(t0*win.getframerate()), int(t1*win.getframerate())
+        win.readframes(s0) # discard
+        print win.getparams()
+        duration=win.getparams()[3]/win.getparams()[2]
+    #   print "%ds" % duration
+        frames= win.readframes(s1-s0)
+
+        wout.setparams(win.getparams())
+        wout.writeframes(frames)
+
+        win.close()
+        wout.close()
+        cmd="rm %s" %fin
+        os.system(cmd)
+        cmd="mv %s %s" %(fout,fin)
+        os.system(cmd)
+
+    def pcm2wav(self,fname):
+        pcmfile = open(fname,'rb')
+        pcmdata = pcmfile.read()
+        wavfile = open(pcm+".wav","wb")
+        wavfile.setparams((1, 2, 16000, 0, 'NONE', 'NONE'))
+        wavfile.writeframes(pcmdata)
+        pcmfile.close()
+        wavfile.close()
+
+    def wavInfo(self,fname):
+        samprate, wavdata = read(fname)
+        chunk = samprate / 8
+        tt= len(wavdata)/chunk
+        frames=len(wavdata)
+        duration=frames/float(samprate)
+        slice=(duration/tt)*1000
+        max = numpy.max( numpy.absolute(wavdata) )
+        print "Summary       : \033[95m%s\033[0m" % fname
+        print "  duration    : %5.2fs" % (duration)
+        print "  sample rate : %dHz" % samprate
+        print "  max level   : %d" % max
+
+    def recAudio(self,fname,duration):
+        print "Rec for %ds %s" % (duration,fname)
+        samprate = 44100
+        inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE)
+        inp.setchannels(1)
+        inp.setrate(samprate)
+        inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+        inp.setperiodsize(512)
+
+        w = wave.open(fname, 'w')
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(samprate)
+
+        total =0
+        while True:
+            l, data = inp.read()
+            w.writeframes(data)
+            total = total + len(data)
+            if total > samprate * duration*2:
+                break
+        #    a = numpy.fromstring(data, dtype='int16')
+        #    print numpy.abs(a).mean()
+
+
+    def play(self,fname):
+        pa = AudioFile(fname)
+        pa.play()
+        pa.close()
+
+    def addWave(self,fname,idx,color,total):
+        rate, wavdata = read(fname)
+        frames=len(wavdata)
+        maxLim = numpy.max( numpy.absolute(wavdata) )
+        duration=frames/float(rate)
+        print "name:%40s size=%6d duration=%d" %(fname,len(wavdata),duration)
+        wav=numpy.fromstring(wavdata, dtype=numpy.int16)
+        pylab.subplot(idx)
+        pylab.title(fname)
+        pylab.grid(True)
+        pylab.subplots_adjust(hspace=.5)
+        pylab.plot(numpy.arange(len(wav))/float(rate),wav,color)
+        if (total !=0):
+            try:
+                yylim = os.environ["ylim"]
+                yylim = int(yylim)
+            except KeyError:
+                yylim = 20000
+                va = [-yylim,yylim]
+                pylab.ylim(va)
+        pylab.ylabel("Amp")
+
+    def wavPlot(self,fname):
+        fnum=len(fname)-1
+        form4 = [411,412,413,414],["b-","r-","y-","k-"]
+        form3 = [311,312,313],["b-","r-","y-"]
+        form2 = [211,212],["b-","r-"]
+        forms = [form2,form2,form3,form4]
+        idx=0
+        fig = plt.figure("leau v2")
+        fig.suptitle('audio suite')
+        for title in fname:
+            self.addWave(title,forms[fnum][0][idx],forms[fnum][1][idx],fnum)
+            idx = idx + 1
+        pylab.show()
+
+
+    def wavDB(self,fname):
+        rate, wdata = read(fname)
+        max = numpy.max( numpy.absolute(wdata))
+        frames=len(wdata)
+        duration=frames/float(rate)
+        print "%40s duration %6.2f %d" % (fname,duration,frames)
+        FrameTime = 10
+        frame_size = FrameTime * rate / 1000
+        number_of_bands = frame_size
+        fft_size = 2 * frame_size
+        freq_step = rate/fft_size      # 50
+        low_band = round(50/freq_step)
+        high_band = number_of_bands
+        bandidx = []
+        Freq = []
+        for x in pylab.arange(low_band,(high_band/2)-1):
+            Freq= x
+        Freq = x
+        pow_db = numpy.array([])
+        chunk=frame_size
+        for i in range(len(wdata) / chunk):
+            values = numpy.array( wdata[i*chunk : (i+1)*chunk] )
+            # normalize [0, 1]
+            values = (values+1e-20) / float(max)
+
+            values = numpy.power(values, 2)
+            rms = numpy.sqrt( numpy.mean(values) )
+            # decibel
+            db = 20 * numpy.log10( (1e-20+(rms)) ) #/ float(max)
+            pow_db = numpy.append(pow_db, db)
+        return pow_db
+
+    def wavPlot2(self,fname):
+        fig = pylab.figure("dBSPL comparsion")
+        color = ["r-","g-","b-","y-","c-","k-","m-"]
+        fnum=len(fname)-1
+        rate, wavdata = read(fname[0])
+        frames=len(wavdata)
+        maxLim = numpy.max( numpy.absolute(wavdata) )
+        duration=frames/float(rate)
+#        print "%40s duration %6.2f %d" % (fname[0],duration,len(wavdata))
+        wav=numpy.fromstring(wavdata, dtype=numpy.int16)
+        pylab.subplot(211)
+        pylab.title(fname[0])
+        pylab.grid(True)
+        pylab.subplots_adjust(hspace=.5)
+        pylab.plot(numpy.arange(len(wav))/float(rate),wav,"r-",label="ref")
+        pylab.ylabel("Amp")
+
+        ax=pylab.subplot(212)
+        pylab.title("dB(SPL)")
+        pylab.grid(True)
+        idx=0
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
+        for title in fname:
+            pow_db=self.wavDB(title)
+            ax.plot(numpy.arange(len(pow_db)),pow_db,color[idx],label=title)
+            idx = idx + 1
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05), fancybox=True, shadow=True, ncol=1)
+        pylab.show()
+
+    def plotSpectru(self,y,Fs):
+        n = len(y) # lungime semnal
+        k = numpy.arange(n)
+        T = n/Fs
+        frq = k/T # two sides frequency range
+        frq = frq[range(n/2)] # one side frequency range
+
+        Y = scipy.fft(y)/n # fft computing and normalization
+        Y = Y[range(n/2)]
+        
+        pylab.plot(frq,abs(Y),'r') # plotting the spectrum
+        pylab.xlabel('Freq (Hz)')
+        pylab.ylabel('|Y(freq)|')
+
+    def wavFreq0(self,fname):
+        rate, wavdata = read(fname)
+        frames=len(wavdata)
+        duration=frames/float(rate)
+
+        lungime=len(wavdata)
+        timp=len(wavdata)/rate
+        t=pylab.linspace(0,timp,len(wavdata))
+
+        pylab.subplot(2,1,1)
+        pylab.plot(t,wavdata)
+        pylab.xlabel('Time')
+        pylab.ylabel('Amplitude')
+        pylab.subplot(2,1,2)
+        self.plotSpectru(wavdata,rate)
+        pylab.show()
+
+    def wavFreq0(self,fname):
+        # open up a wave
+        self.size = 441000
+        wf = wave.open(fname)
+        swidth = wf.getsampwidth()
+        self.frate = wf.getframerate()
+        self.data=wf.readframes(self.size)
+        wf.close()
+        self.data=struct.unpack('{n}h'.format(n=self.size), self.data)
+        self.data=numpy.array(self.data)
+
+        w = numpy.fft.fft(self.data)
+        freqs = numpy.fft.fftfreq(len(w))
+#        print(freqs.min(),freqs.max())
+
+        # Find the peak in the coefficients
+        idx=numpy.argmax(numpy.abs(w)**2)
+        freq=freqs[idx]
+        freq_in_hertz=abs(freq*self.frate)
+        print "%dHz" % (freq_in_hertz)
+
+
+    def wavFreq(self,fname):
+        # open up a wave
+        self.lp = 4000
+        # self.lm = -300
+        wf = wave.open(fname, 'rb')
+        swidth = wf.getsampwidth()
+        RATE = wf.getframerate()
+
+        chunk = 441
+        window = numpy.blackman(chunk)
+        freq_db = numpy.array([])
+        data = wf.readframes(chunk)
+        lastfreq=0
+        #
+        # play stream and find the frequency of each chunk
+        while len(data) == chunk*swidth:
+            # write data out to the audio stream
+            # stream.write(data)
+            # unpack the data and times by the hamming window
+            indata = numpy.array(wave.struct.unpack("%dh"%(len(data)/swidth),\
+                             data))*window
+            # Take the fft and square each value
+            fftData=abs(numpy.fft.rfft(indata))**2
+            which = fftData[1:].argmax() + 1
+            if which != len(fftData)-1:
+                y0,y1,y2 = numpy.log(fftData[which-1:which+2:])
+                x1 = (y2 - y0) * .5 / (2 * y1 - y2 - y0)
+                # find the frequency and output it
+                thefreq = (which+x1)*RATE/chunk
+            else:
+                thefreq = which*RATE/chunk
+            data = wf.readframes(chunk)
+            if self.lm != 0:
+                if thefreq < self.lm:
+                    print "Skip %d Hz value" %(thefreq)
+                    thefreq = lastfreq
+            if self.lp != 0:
+                if thefreq > self.lp:
+                    print "Skip %d Hz value" %(thefreq)
+                    thefreq = lastfreq
+            lastfreq=thefreq
+            freq_db = numpy.append(freq_db, thefreq)
+        pylab.subplot(211)
+        pylab.title(fname)
+        pylab.grid(True)
+        pylab.plot(numpy.arange(len(freq_db)),freq_db,"r-")
+
+        pylab.subplot(212)
+        xxx=pylab.hist(freq_db,bins=range(0,3000,300))
+        pylab.show()
+
+    def find_thdb(self,fname):
+        chunk = 225
+        est_threshold = -20
+        # ref tick duration
+        tick_wide = 100
+        num_of_tick = 20
+        samprate, wavdata = read(fname)
+        tt= len(wavdata)/chunk
+        frames=len(wavdata)
+        duration=frames/float(samprate)
+        slice=(duration/tt)*1000
+        max = numpy.max( numpy.absolute(wavdata) )
+        time_pos = numpy.array([])
+        count =0
+        ii = 0
+        last_ii = 0
+        for est_db in range(-25,-10,1):
+            time_pos = numpy.array([])
+            for i in range(len(wavdata) / chunk):
+                ii = ii + 1
+                values = numpy.array( wavdata[i*chunk : (i+1)*chunk] )
+                # normalize [0, 1]
+                values = values / float(max)
+
+                values = numpy.power(values, 2)
+                rms = numpy.sqrt( numpy.mean(values) )
+                # decibel
+                db = 20 * numpy.log10( (1e-20+rms) ) #/ float(max)
+                if db > est_db:
+                    if ii>last_ii+(tick_wide/slice):  #/ slice*10 ~= 100ms for whole tap
+                        last_ii = ii
+                        count = count +1
+                        time_pos = numpy.append(time_pos,slice*ii)
+            if ((len(time_pos))==20):
+                print "estimate \033[91m%d dB \033[0mDone :-)" % est_db
+                break
+        return est_db
+
+    def tickCalc(self,fname):
+        """
+          TODO
+          need to fine tune for your own tick.wav
+          try smart way auto thdb threshold
+        """
+        #######>----- change from here
+        # chunk much small more accuracy
+        chunk = 225
+        # ref tick duration
+        tick_wide = 100
+        num_of_tick = 20
+
+        #######<------
+
+        samprate, wavdata = read(fname)
+        #    chunk = samprate / 8
+        tt= len(wavdata)/chunk
+        frames=len(wavdata)
+        duration=frames/float(samprate)
+        slice=(duration/tt)*1000
+
+        max = numpy.max( numpy.absolute(wavdata) )
+        ref_pos = numpy.array([])
+        data_db = numpy.array([])
+        time_pos = numpy.array([])
+        latency_db = numpy.array([])
+
+        # find best db threshold for tick signal
+        thdb=self.find_thdb(fname)
+        tick_threshold=thdb
+        print "Summary          : \033[95m%s\033[0m" % fname
+        print "  tick threshold : %d dB (best fit)" % thdb
+        print "  duration       : %6.2fs" % (duration)
+        print "  slice          : %6.2fms" % slice
+        print "  tick width     : %6.2fms" %(tick_wide)
+        print "  sample rate    : %dHz" % samprate
+
+        """
+           real measure from audacity
+        """
+        for i in range(20):
+            ref_pos = numpy.append(ref_pos,500*(i+1))
+        count =0
+        ii = 0
+        last_ii = 0
+        for i in range(len(wavdata) / chunk):
+            ii = ii + 1
+            values = numpy.array( wavdata[i*chunk : (i+1)*chunk] )
+            # normalize [0, 1]
+            values = values / float(max)
+
+            values = numpy.power(values, 2)
+            rms = numpy.sqrt( numpy.mean(values) )
+            # decibel
+            db = 20 * numpy.log10( (1e-20+rms) ) #/ float(max)
+            if db > tick_threshold:
+                if ii>last_ii+(tick_wide/slice):  #/ slice*10 ~= 100ms for whole tap
+                    last_ii = ii
+                    count = count +1
+                    time_pos = numpy.append(time_pos,slice*ii)
+            data_db = numpy.append(data_db, db)
+        #    print time_pos
+        print "%d Ticks!!! (chunk=%d) len=%d count= %d slice=%5.2fms" % (count,chunk,len(wavdata),tt,(duration/tt)*1000)
+        """
+          if ticks detect without Error show latency
+        """
+        if count == num_of_tick:
+            for i in range(count):
+                latency_db = numpy.append(latency_db,(time_pos[i]-ref_pos[i]))
+            print "%25s :: \033[92mmean=%6.2fms \033[91mmax=%6.2fms \033[93mmin=%6.2fms\033[0m tolerance as slice\033[92m%5.2fms\033[0m" % (fname,numpy.mean(latency_db),numpy.max(latency_db), numpy.min(latency_db),slice)
+        else:
+            print time_pos
+            print ref_pos
+        #    pylab.subplot(411)
+        #    pylab.title("REF,--")
+        #    pylab.grid(True)
+        #    pylab.plot(numpy.arange(count),time_pos-ref_pos,"r-")
+        #    pylab.show()
+
+def rvconv(raw,wav):
+    pcmfile = open(raw, 'rb')
+    pcmdata = pcmfile.read()
+    wv=wave.open(wav, 'wb')
+    wv.setparams((1, 2, 44100, 0, 'NONE', 'NONE'))
+#    wv.setparams((1, 2, 16000, 0, 'NONE', 'NONE'))
+    wv.writeframes(pcmdata)
+    wv.close()
+
+
+def helpRvAEC():
+    print "rvAEC "
+    print "0. modify sbacp.ini with following item"
+    print "1.  \033[91m>sweep spk -10 100 4000 10\033[0m [ aec recordings test ]"
+    print "1.1  adb put sbacp.ini /sdcard/"
+    print "2.  relaunch LiveHD"
+    print "3.  call remote patry"
+    print "3.1 stop livehd in one cycle sweep"
+    print "4. check result with \033[93mmic.wav\033[0m and \033[92mmout.wav\033[0m"
+    print "5. leau_v2 min.wav mout.wav -db"
+    print ""
+
+def setup_parser():
+    parser = ArgumentParser(description='leau_\033[92mv2\033[0m for Audio processing....', add_help=False)
+    parser.add_argument('--help', action='help', help='show this help message and exit')
+    parser.add_argument('filename', nargs="*", help='Analysis Wavefrom')
+    parser.add_argument('-cu','--cut',  action='store_true', help='cut WAV first 10 seconds')
+    parser.add_argument('-c0','--cut0',  action='store_true', help='skip WAV first 1 seconds')
+    parser.add_argument('-cv','--rvconv',  action='store_true', help='convert rv pcm to wav')
+    parser.add_argument('-ae','--rvaec',  action='store_true', help='check rvAEC micIn.pcm,micOut.pcm')
+    parser.add_argument('-re','--rec',  action='store_true', help='WAV record for 10 seconds')
+    parser.add_argument('-pl','--play', action='store_true', help="play Wav file")
+    parser.add_argument('-pp','--play2', action='store_true', help="play 2 audio via L410 vs cMedia")
+    parser.add_argument('-sw','--sweep', action='store_true', help="play and record (preDefine sweep) rec_sweep.wav")
+    parser.add_argument('-ti','--tick', action='store_true', help="play and record (preDefine tick.wav) rec_tick.wav")
+    parser.add_argument('-la','--latency', action='store_true', help="Analyze rec_tick audio latency")
+    parser.add_argument('-pr','--play_rec', action='store_true', help="play and record play.wav rec.wav")
+    parser.add_argument('-fr','--freq', action='store_true', help="show wav frequency")
+    parser.add_argument('-2','--form2', action='store_true', help="Analysis in 2 Waveform")
+    parser.add_argument('-db','--dbspl', action='store_true', help="show wav in dbSPL args as '\033[91mref\033[0m wav1 wav2'")
+    parser.add_argument('-pu','--pull', action='store_true', help="pull testpcm.wav from adb")
+    parser.add_argument('-p1','--pullrv', action='store_true', help="pull rvPCM from adb")
+    parser.add_argument('-p2','--pullthd', action='store_true', help="pull thd wave from adb")
+    parser.add_argument('-sm','--smdb', action='store_true', help="show SoundMeter dB measure in 10 seconds")
+    parser.add_argument('-tp','--tap0', action='store_true', help="tap sweep and record local")
+    parser.add_argument('-tf','--tap1', action='store_true', help="tap female speech and record local")
+    parser.add_argument('-am','--amMain', action='store_true', help="am start MainAct LiveHD")
+    return parser
+
+DEFAULT_PRINT_OPTIONS = (False)
+
+def main():
+    # set up argparse argument parser and get args
+    parser = setup_parser()
+    args = parser.parse_args()
+
+    use_rec = DEFAULT_PRINT_OPTIONS
+    au=leau()
+
+    if args.rec:
+        if args.filename:
+            fn=args.filename[0]
+        else:
+            fn="rec.wav"
+        print "REC in %s 10s" % fn
+        au.recAudio(fn,10)
+        return
+
+    if args.tap0:
+        if args.filename:
+            fn=args.filename[0]
+        else:
+            fn="recs.wav"
+        print "REC in %s 11s" % fn
+        adb=ADB()
+        # tap location for Start REC on APK
+        adb.call_adb("shell input tap 100 200")
+        au.recAudio(fn,11)
+        print "check %s" % fn
+        return
+
+    if args.tap1:
+        if args.filename:
+            fn=args.filename[0]
+        else:
+            fn="recf.wav"
+        print "REC in %s 11s" % fn
+        adb=ADB()
+        # tap location for Start REC on APK
+        adb.call_adb("shell input tap 300 200")
+        au.recAudio(fn,11)
+        print "check %s" % fn
+        return
+    
+    if args.play:
+        if args.filename:
+           fn=args.filename[0]
+        else:
+           print "filename is require for play audio"
+        print "Play WAV files"
+        au.play(fn)
+        return
+
+    if args.freq:
+        if args.filename:
+           fn=args.filename[0]
+        else:
+           print "filename is require for audio"
+        au.wavFreq(fn)
+        return
+
+    if args.cut:
+        if (len(args.filename)==2):
+            et=int(args.filename[1])
+        else:
+            et=10
+        print "Cut....%s (0..%ds)" %(args.filename[0],et)
+        au.cut(args.filename[0],0,et)
+        return
+
+    if args.cut0:
+        if (len(args.filename)==2):
+            et=int(args.filename[1])
+        else:
+            et=10
+        print "Cut....%s (1..%ds)" %(args.filename[0],et)
+        au.cut(args.filename[0],1,et)
+        return
+
+    if args.tick:
+        os.system("figlet 'Tick TEST'")
+        print "20's tick signal "
+        if (len(args.filename)==1):
+            frec = args.filename[0]
+        else:
+            frec = "rec_tick.wav"
+        print "play \033[93m%s\033[0m and record in \033[92m%s\033[0m" % ("TICK",frec)
+        p = multiprocessing.Process(target=au.recAudio, name="REC", args=(frec,11))
+        p.start()
+        au.play("/opt/raw/tick")
+        time.sleep(1)
+        # Terminate foo
+        p.terminate()
+        # Cleanup
+        p.join()
+        return
+
+    if args.sweep:
+        os.system("figlet 'Sweep TEST'")
+        print "from 300~3000Hz -10dB"
+        if (len(args.filename)==1):
+            frec = args.filename[0]
+        else:
+            frec = "rec_sweep.wav"
+        print "play \033[93m%s\033[0m and record in \033[92m%s\033[0m" % ("SWEEP",frec)
+        p = multiprocessing.Process(target=au.recAudio, name="REC", args=(frec,11))
+        p.start()
+        au.play("/opt/raw/sweep")
+        time.sleep(1)
+        # Terminate foo
+        p.terminate()
+        # Cleanup
+        p.join()
+        return
+
+    if args.play_rec:
+        os.system("figlet Play and Record")
+        if (len(args.filename)==2):
+            fplay = args.filename[0]
+            frec = args.filename[1]
+            print "play \033[93m%s\033[0m and record in \033[92m%s\033[0m" % (fplay,frec)
+            p = multiprocessing.Process(target=au.recAudio, name="REC", args=(frec,10))
+            p.start()
+            au.play(fplay)
+            # Terminate foo
+            p.terminate()
+            # Cleanup
+            p.join()
+        return
+
+    if args.latency:
+        print "Audio Latency measurement...%s" % args.filename[0]
+        au.tickCalc(args.filename[0])
+        return
+
+    if args.form2:
+        print "wavPlot dBSPL "
+        au.wavPlot2(args.filename)
+        return
+
+    if args.dbspl:
+        if args.filename:
+            au.wavPlot2(args.filename)
+        return
+
+    if args.pull:
+        if args.filename:
+           fn=args.filename[0]
+        else:
+           fn=""
+        adb=ADB()
+        # tap location for Start REC on APK
+        adb.call_adb("pull /sdcard/testpcm.wav %s" % fn)
+        return
+
+    if args.pullrv:
+        adb=ADB()
+        os.system("figlet pull rvPCM")
+        # tap location for Start REC on APK
+        adb.call_adb("pull /sdcard/MicIn.pcm")
+        adb.call_adb("pull /sdcard/MicOut.pcm")
+        adb.call_adb("pull /sdcard/speakerIn.pcm")
+        adb.call_adb("pull /sdcard/speakerOut.pcm")
+        return
+
+    if args.pullthd:
+        adb=ADB()
+        os.system("figlet pull thd Wav")
+        # tap location for Start REC on APK
+        adb.call_adb("pull /sdcard/raw/out")
+        return
+
+
+    if args.rvaec:
+        adb=ADB()
+        os.system("figlet rvAEC")
+        helpRvAEC()
+        # tap location for Start REC on APK
+        adb.call_adb("pull /sdcard/MicIn.pcm")
+        adb.call_adb("pull /sdcard/MicOut.pcm")
+        try:
+           with open('MicIn.pcm'): pass
+        except IOError:
+           print 'Oops!!!!'
+           return
+        rvconv("MicIn.pcm","min.wav")
+        rvconv("MicOut.pcm","mout.wav")
+        os.system("rm MicIn.pcm")
+        os.system("rm MicOut.pcm")
+#        au.wavPlot2(['min.wav','mout.wav'])
+        return
+
+    if args.play2:
+        adb=ADB()
+#        print "REC on Tablet FG6Q"
+#EP1T
+#       adb.call_adb("shell input tap 377 143")
+#FG6Q
+        adb.call_adb("shell input tap 720 310")
+        print "double Player"
+        ap=aplay2()
+        ap.aplay("/opt/raw/eng_f1.wav",0)
+        ap.aplay("/opt/raw/eng_m1.wav",1)
+         
+        return
+
+    if args.smdb:
+        with noalsaerr():
+            tt = dBTester()
+            for i in range(200):
+                tt.listen()
+
+            tt.showInfo()
+            tt.showdB()
+        return
+
+    if args.amMain:
+        adb=ADB()
+        adb.call_adb("shell am start -n com.radvision.beehd/.gui.MainAct")
+        return
+
+    if args.rvconv:
+        if len(args.filename)==2:
+           raw=args.filename[0]
+           wav=args.filename[1]
+           rvconv(raw,wav)
+        else:
+           print "--help for more\n  leau -cv raw wav"
+        return
+    if args.filename:
+#       au.wavInfo(args.filename[0])
+#        print "wavPlot %s" % args.filename[0]
+        au.wavPlot(args.filename)
+        return
+
+    print "leau --help for more information"
+
+if __name__ == '__main__':
+    main()
+
+
+#http://en.wikipedia.org/wiki/Sound_pressure#Sound_pressure_level
+#http://puredata.info/docs/AndroidLatency
+
+#print help(leau)

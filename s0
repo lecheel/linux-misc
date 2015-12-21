@@ -1,0 +1,81 @@
+#! /usr/bin/env python
+import pyaudio
+import wave
+import numpy,scipy
+import os,sys
+from smdb import dBTester
+import subprocess
+import time
+from argparse import ArgumentParser
+
+ADEV = [ "sysdefault:CARD=Set", "sysdefault:CARD=USB" ]
+class aplay2:
+    def aplay(self, command,idx):
+        command_text = 'aplay -D %s %s &' % (ADEV[idx],command)
+        os.system(command_text)
+        return 
+
+class ADB:
+    def call_adb(self, command):
+        command_result = ''
+        command_text = 'adb %s' % command
+	results = os.popen(command_text, "r")
+        while 1:
+            line = results.readline()
+            if not line: break
+            command_result += line
+        time.sleep(0.2)
+        return command_result
+
+
+def gotpcm(adb):
+    adb.call_adb("shell input tap 600 100")   # clear
+    adb.call_adb("shell input tap 580 1066")  # return
+    adb.call_adb("shell input tap 579 1066")  # return
+    adb.call_adb("shell input tap 1030 500")  # openAPK
+    time.sleep(0.2)
+
+
+
+def setup_parser():
+    parser = ArgumentParser(description='Audio processing script', add_help=False)
+    parser.add_argument('--help', action='help', help='show this help message and exit')
+    parser.add_argument('filename', nargs="*", help='Analysis Wavefrom')
+    parser.add_argument('-1','--sweep', action='store_true', help="sweep with voice")
+    parser.add_argument('-2','--female', action='store_true', help="female voice in-loop with male voice")
+    return parser
+
+DEFAULT_PRINT_OPTIONS = (False)
+
+def main():
+    # set up argparse argument parser and get args
+    parser = setup_parser()
+    args = parser.parse_args()
+    adb=ADB()
+
+    if args.sweep:
+        os.system("figlet 'audio Sweep in-loop'")
+        gotpcm(adb)
+        aa=aplay2()
+        adb.call_adb("shell input tap 100 100")
+        aa.aplay("/opt/raw/eng_f1.wav",1)
+        time.sleep(13)
+        os.system("figlet 'retrive testPCM'")
+        adb.call_adb("pull /sdcard/testpcm.wav")  # retrive PCMWAVE
+        return
+
+    if args.female:
+        os.system("figlet 'female in-loop'")
+        gotpcm(adb)
+        aa=aplay2()
+        adb.call_adb("shell input tap 850 100")
+        aa.aplay("/opt/raw/eng_m1.wav",1)
+        time.sleep(13)
+        os.system("figlet 'retrive testPCM'")
+        adb.call_adb("pull /sdcard/testpcm.wav")  # retrive PCMWAVE
+        return
+
+    os.system("figlet 'Sweep and Voice'")
+
+if __name__ == '__main__':
+    main()

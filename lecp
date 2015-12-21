@@ -1,0 +1,88 @@
+#! /bin/bash                    
+VER=v0.2
+if [[ $1 == "-h" ]]; then
+   echo -e "lecp \033[93m$VER\033[0m"
+   echo "     ls     -- list last 10 files remote"
+   echo "     file   -- scp file to remote lesrc..."
+   echo "     file . -- retrive file from remote lesrc..."
+   exit
+fi
+
+PC=`uname -a|awk -F' ' '{print $2}'`
+if [[ $PC == "lePC" ]]; then
+    DEST="192.168.0.2"
+    echo "Local $DEST"
+else
+    DEST="lesrc.hopto.org"
+fi
+
+if [[ $1 == "ls" ]]; then
+    echo "port 202"
+   figlet "last 10 uploads"
+   ssh -p 202 $DEST ls -ltr /tmp | tail -10
+#   ssh $DEST find /tmp -iname "*" -atime 3 -type -
+   exit
+fi   
+
+if [[ $1 == "la" ]]; then
+   figlet "last 30 uploads"
+   ssh -p 202 $DEST ls -ltr /tmp | tail -30
+#   ssh $DEST find /tmp -iname "*" -atime 3 -type -
+   exit
+fi   
+
+if [[ $1 == "rm" ]]; then
+    echo -e "(\033[92mRemove\033[0m $2)"
+    read -p "Do you want to delete $2 -> $DEST... ?(y/N)" -n 1 -r
+    echo    # (optional) move to a new line
+    if [[ $REPLY == "" ]];then
+	REPLY="N"
+    fi
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+	ssh -p 202 $DEST "rm /tmp/$2"
+	echo "Removed!!!"
+	exit
+    fi 
+    exit   
+fi   
+
+
+
+if [[ $# -eq 1 ]]; then
+   if [[ -f $1 ]]; then
+       echo -e "(\033[92mupload\033[0m)"
+       read -p "Do you want to copy $1 -> $DEST... ?(Y/n)" -n 1 -r
+       echo    # (optional) move to a new line
+       if [[ $REPLY == "" ]]; then
+          REPLY="Y"
+       fi
+       if [[ $REPLY =~ ^[Yy]$ ]]; then
+	   echo -e "scp \033[91m$1\033[0m --> lesrc...:/tmp"
+	   scp -P 202 $1 $DEST:/tmp; 
+       else
+	   exit
+       fi
+       #     scp $1 $DEST:/tmp
+   else
+     echo -e "\033[91m$1\033[0m not exist"
+     read -p "Do you want to Download? (Y/n)" -n 1 -r
+     echo    # (optional) move to a new line
+     if [[ $REPLY == "" ]]; then
+	 REPLY="Y"
+     fi
+     if [[ $REPLY =~ ^[Yy]$ ]]; then
+	 scp -P 202 $DEST:/tmp/$@ . 
+     else
+	 exit
+     fi
+   fi
+   exit
+fi
+
+if [[ $1 == "" ]]; then
+    echo -e "lecp from $DEST (\033[93m$VER\033[0m)"
+else
+   echo -e "(\033[96mDownload\033[0m)" 
+   scp -P 202 $DEST:/tmp/$@ 
+fi   
+ 

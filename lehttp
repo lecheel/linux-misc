@@ -1,0 +1,4 @@
+#! /bin/bash
+figlet tSHARK
+echo "for HTTP"
+sudo tshark -i eth0 tcp port 80 or tcp port 443 -V -R "http"

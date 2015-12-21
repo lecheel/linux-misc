@@ -7,9 +7,10 @@ G_leproj="$HOME/proj/leproj"
 
 # change to sp option
 if [[ -f $HOME/lastproj ]]; then
-   lastproj=($(\cat $HOME/lastproj))
-   export lePROJ=$HOME/proj/$lastproj
-   export lePROJsrc=$HOME/proj/$lastprojsrc
+    lastproj=($(\cat $HOME/lastproj))
+    export llproj=$lastproj
+    export lePROJ=$HOME/proj/$lastproj
+    export lePROJsrc=$HOME/proj/$lastprojsrc
 fi
 
 #
@@ -18,7 +19,7 @@ fi
 #
 
 
-PS1='\[\033[01;33m\]leCA27\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]:\$ '
+PS1='\[\033[01;33m\]leZ77\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]:\$ '
 
 #if [ -f $HOME/.git-completion ]; then
 #    source $HOME/.git-completion
@@ -27,85 +28,101 @@ PS1='\[\033[01;33m\]leCA27\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]:\$ '
 #fi
 
 if [ -f /etc/bash_completion ]; then
-  . /etc/bash_completion
+    . /etc/bash_completion
 fi
 
-function sa()
-{
-    if [[ $1 == "" ]]; then
-      echo "sa [regex]"
-      return
-    fi
-    if [[ $1 == "?" || $1 == "--help" ]]; then
-      echo "sa [regex]"
-      echo "o [0..9] for vim launch"
-      return
-    fi
-    
-    ag --fte $@ > ~/fte.grp
-    vgrep -v
-}
-
-
-# open line for vgrep vim
 function o()
 {
-    if [[ $1 == "?" || $1 == "--help" ]]; then
-      echo -e "\033[91mo\033[0mutput select for \033[93mag\033[0m"
-      echo -e "o [\033[94mregex\033[0m]"
-      echo -e "o [\033[92m0..9\033[0m] for vim launch"
-      echo "o        history viewer" 
-      return
+    vg $@
+}
+
+function vg()
+{
+    if [[ $1 == "?" || $1 == "--help" || $1 == "-?" || $1 == "-h"  ]]; then
+	echo "vg         ag viewer " 
+	echo "   [regex] search for pattern via ag"
+	echo "   [0..9]  for vim"
+
+	return
     fi
+
+    if [[ $1 == "--hist" ]]; then
+	echo -e "show \033[96mag\033[0m pattern history"
+	echo "-----------------------------------------"
+	cat ~/ag_history
+	return
+    fi
+
     if [[ $1 == "" ]]; then
-#      vgrep -v
-      grepsel -vv 0
-    else    	
-      grepsel -vv $@
-#    ag --fte $@ > ~/fte.grp
-#    vgrep -v
+	grepsel -vv 0
+	return
     fi
+
+    re='^[0-9]+$'
+    if [[ $1 =~ $re ]] ; then
+	echo "Number !!!!"
+	grepsel -vv $1
+	return
+    fi
+
+    if [[ $1 == "-s" ]]; then
+	grepsel -v
+	return
+    fi
+
+
+    local DATE=`date +%Y%m%d-%H%M`  
+    local STR=${DATE}" "$@" "     
+    #    echo $STR >> $HOME/ag_history
+    echo -e "$STR\n$(cat $HOME/ag_history)" > $HOME/ag_history
+    ag --fte $@ > ~/fte.grp
+    grepsel -vv 0
 }
 
 function sp()
 {
 
     if [[ $1 == "?" || $1 == "--help" ]]; then
-      echo -e "  sp v0.1 for \033[092mSwitchProj\033[0m in bash"
-      echo "  sp             -- project lists"
-      echo "  sp [0..9]      -- switch project to []"
-      echo -e "  sp -anp        -- create new Project"
-      return
+	echo -e "  sp v0.1 for \033[092mSwitchProj\033[0m in bash"
+	echo -e "  sp             -- project lists \033[91m*\033[0m"
+	echo -e "  sp [\033[92m0..9\033[0m]      -- switch project to []"
+	echo -e "  sp -anp foo    -- create new Project"
+	return
     fi
 
 
     if [[ "$1" == "-anp" ]]; then
-        if [[ $2 == "" ]]; then
-           echo "project name needed!!!"
-           echo "sp -anp foo"
-           return
-        fi
-        if [ -f $HOME/$2 ];then
-           echo "Already exist"
-        else
-           src="src"
-           projsrc=$2$src
-           touch $HOME/proj/$2
-           touch $HOME/proj/$projsrc
-           echo $2 >> $G_leproj
-           echo -e "Project \033[95m$2\033[0m Create"
-           export lePROJ=$HOME/proj/$2
-           export lePROJsrc=$HOME/proj/$projsrc           
-#           echo -ne "Set \033[93m$PWD\033[0m as home proj (Y/n): "
-#           read a
-#           if [[ $a == "Y" || $a == "y" || $a = "" ]]; then
-                   ddd=`date +'%Y-%m-%d'`
-                   msg=$ddd">> "$PWD
-                   echo $msg >> $HOME/proj/$2
-#           fi
-           
-        fi
-        return
+	if [[ $2 == "" ]]; then
+	    echo "project name needed!!!"
+	    echo "sp -anp foo"
+	    return
+	fi
+	if [ -f $HOME/$2 ];then
+	    echo "Already exist"
+	else
+	    src="src"
+	    projsrc=$2$src
+	    touch $HOME/proj/$2
+	    touch $HOME/proj/$projsrc
+	    echo $2 >> $G_leproj
+	    echo -e "Project \033[95m$2\033[0m Create"
+	    export lePROJ=$HOME/proj/$2
+	    export lePROJsrc=$HOME/proj/$projsrc           
+	    echo -e "Set \033[93m$PWD\033[0m as home"
+	    #           echo -ne "Set \033[93m$PWD\033[0m as home proj (Y/n): "
+	    #           read a
+	    #           if [[ $a == "Y" || $a == "y" || $a = "" ]]; then
+	    #           read -p "keyboard: " kw
+	    kw="-"
+	    local DATE=`date +%Y%m%d-%H%M`
+	    local DIR=`pwd`           
+	    local STR=${DATE}">> "$kw" "${PWD}
+	    kw="${kw:--}"
+	    echo $STR >> $HOME/proj/$2
+	    #           fi
+
+	fi
+	return
     fi
 
     if [[ "$1" == "-rm" ]]; then
@@ -115,93 +132,124 @@ function sp()
 	    printf "\033[92m%6s \033[0m%s \033[0m\n" "[$index]" $line 
 	    index=$(($index+1))
 	done 
-	
+
 	read -p "Which proj need to remove? " removed
-        if [[ -z $removed ]] || (( $removed >= ${#lines[@]} )); then
+	if [[ -z $removed ]] || (( $removed >= ${#lines[@]} )); then
 	    return 1
-        fi
-        rm -f "$G_leproj"
-        touch "$G_leproj"
+	fi
+	rm -f "$G_leproj"
+	touch "$G_leproj"
 
-#	file=${lines[$removed]}
-#        rm -f ~/proj/$file
-#        rm -f ~/proj/$filesrc	
+	#	file=${lines[$removed]}
+	#        rm -f ~/proj/$file
+	#        rm -f ~/proj/$filesrc	
 
-        for (( i=0; i<${#lines[@]}; i++)); do
-          if [[ $i != $removed ]] && [[ ${key[$i]} != $removed ]]; then
-            echo "${lines[$i]}" >> "$G_leproj"
-          fi
-        done
- 
- 	return
+	for (( i=0; i<${#lines[@]}; i++)); do
+	    if [[ $i != $removed ]] && [[ ${key[$i]} != $removed ]]; then
+		echo "${lines[$i]}" >> "$G_leproj"
+	    fi
+	done
+
+	return
     fi
 
     if [[ "$1" == "" ]]; then  
 	aproj=($(\echo $lePROJ | awk -F"/" '{print $NF}'))
-        echo -e "\033[92mProject LiST\033[0m"
-        echo "----+------------------------"
+	echo -e "\033[92mProject LiST\033[0m"
+	echo "----+------------------------"
 	lines=($(\cat $G_leproj | uniq))
 	local index=1
 	for line in ${lines[@]}; do
-	          if [[ "$line" == "$aproj" ]]; then
-		      printf " \033[091m*\033[92m%6s \033[0m%s \033[0m\n" "[$index]" $line 
-		  else
-		      printf "  \033[92m%6s \033[0m%s \033[0m\n" "[$index]" $line 
-		  fi
-		  index=$(($index+1))
-	      done 
-#        echo -e "\033[92m*\033[36m $lePROJ\033[0m"
+	    if [[ "$line" == "$aproj" ]]; then
+		printf " \033[091m*\033[92m%6s \033[0m%s \033[0m\n" "[$index]" $line 
+	    else
+		printf "  \033[92m%6s \033[0m%s \033[0m\n" "[$index]" $line 
+	    fi
+	    index=$(($index+1))
+	done 
+	echo -n "Select Project: "
+	unset choice
+	read choice
+	if [[ $choice -eq "0" ]]; then
+	    return
+	fi
+	proj=${lines[$choice-1]}
+	src="src"
+	projsrc=$proj$src
+	export lePROJ=$HOME/proj/$proj
+	export lePROJsrc=$HOME/proj/$projsrc
+	echo -ne "\033]0;$lePROJ\007"
+	echo $proj > $HOME/lastproj
+
+	xhome=`sed -n 1p $lePROJ|awk -F " " '{print $3}'`
+	export PHOME=$xhome
     else
-       if [[ ${#lines[@]} = 0 ]]; then
-           echo "no Proj"
-           return
-        fi
-        ln=$1-1
-        proj=${lines[${ln}]}
-#        proj=$(echo $xx | awk '{split($0,a,":"); print a[2]}')
-        src="src"
-        projsrc=$proj$src
-        export lePROJ=$HOME/proj/$proj
-        export lePROJsrc=$HOME/proj/$projsrc
-        echo -ne "\033]0;$lePROJ\007"
-        echo $proj > $HOME/lastproj
+	if [[ ${#lines[@]} = 0 ]]; then
+	    echo "no Proj"
+	    return
+	fi
+	ln=$1-1
+	proj=${lines[${ln}]}
+	#        proj=$(echo $xx | awk '{split($0,a,":"); print a[2]}')
+	src="src"
+	projsrc=$proj$src
+	export lePROJ=$HOME/proj/$proj
+	export lePROJsrc=$HOME/proj/$projsrc
+	echo -ne "\033]0;$lePROJ\007"
+	echo $proj > $HOME/lastproj
+
+	# pop first line of $lePROJ as home
+	xhome=`sed -n 1p $lePROJ|awk -F " " '{print $3}'`
+	export PHOME=$xhome
     fi
+}
+
+function mkgrep()
+{
+    if [[ $1 == "" ]]; then
+	echo "mkgrep pattern (v0.1)"
+	return
+    fi
+    echo -e ">>>\033[92mmkgrep\033[93m\033[0m<<<"
+    find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.mk' -o -name 'Makefile' -o -name '*.mak' \) -print0 | xargs -0 grep --color -n "$1"
+    return 
+
 }
 
 function cgrep()
 {
     if [[ $1 == "" ]]; then
-      echo "cgrep pattern [mk]|[py]"
-      return
+	echo "cgrep pattern [mk]|[py]"
+	return
     fi
     if [[ $2 == "mk" ]]; then
-      echo "grep all make"
-      find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.mk' -o -name 'Makefile' -o -name '*.mak' \) -print0 | xargs -0 grep --color -n "$1"
-      return 
+	echo -e ">>>\033[92mgrep all \033[93mmake\033[0m<<<"
+	find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.mk' -o -name 'Makefile' -o -name '*.mak' \) -print0 | xargs -0 grep --color -n "$1"
+	return 
     fi
 
     if [[ $2 == "py" ]]; then
-      echo "grep all \033[091mpy\033[0m"
-      find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.py' \) -print0 | xargs -0 grep --color -n "$1"
-      return 
+	echo "grep all \033[091mpy\033[0m"
+	find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.py' \) -print0 | xargs -0 grep --color -n "$1"
+	return 
     fi
 
     if [[ $2 == "h" ]]; then
-      echo "grep all \033[091mH\033[0m"
-      find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.h' \) -print0 | xargs -0 grep --color -n "$1"
-      return 
+	echo "grep all \033[091mH\033[0m"
+	find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.h' \) -print0 | xargs -0 grep --color -n "$1"
+	return 
     fi
 
     if [[ $2 == "cc" ]]; then
-      echo "grep all \033[091mc\033[0m"
-      find . -name .repo -prune -o -name .git -prune -o -type f \( '*.c' -o -name '*.cc' -o -name '*.cpp' \) -print0 | xargs -0 grep --color -n "$1"
-      return 
+	echo "grep all \033[091mc\033[0m"
+	find . -name .repo -prune -o -name .git -prune -o -type f \( '*.c' -o -name '*.cc' -o -name '*.cpp' \) -print0 | xargs -0 grep --color -n "$1"
+	return 
     fi
 
     if [[ $2 == "j" ]]; then
-      echo "grep all \033[091mjava\033[0m"
-      find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.java' \) -print0 | xargs -0 grep --color -n "$1"
-      return 
+	echo "grep all \033[091mjava\033[0m"
+	find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.java' \) -print0 | xargs -0 grep --color -n "$1"
+	return 
     fi
 
     find . -name .repo -prune -o -name .git -prune -o -type f \( -name '*.mk' -o -name '*.c' -o -name '*.cc' -o -name '*.cpp' -o -name '*.h' \) -print0 | xargs -0 grep --color -n "$@"
@@ -227,55 +275,114 @@ function cgrep()
 function go_ledir
 {
     local lines
-#    lines=($(\grep "$1" /work/ledir | sed -e 's/\/[^/]*$//' | sort | uniq))
-#    if (( $1 > 0 )) 2>/dev/null; then
-#       local skip_sel=1
-#       lines=($(\grep "" $ledir | sed -e 's/[^ ]* //'| sort | uniq))    
-#    else
-#       lines=($(\grep "$1" $ledir | sed -e 's/[^ ]* //'| sort | uniq))
-#    fi
-#    if [[ ${#lines[@]} = 0 ]]; then
-#        echo "Not found"
-#        return
-#    fi
+    #    lines=($(\grep "$1" /work/ledir | sed -e 's/\/[^/]*$//' | sort | uniq))
+    #    if (( $1 > 0 )) 2>/dev/null; then
+    #       local skip_sel=1
+    #       lines=($(\grep "" $ledir | sed -e 's/[^ ]* //'| sort | uniq))    
+    #    else
+    #       lines=($(\grep "$1" $ledir | sed -e 's/[^ ]* //'| sort | uniq))
+    #    fi
+    #    if [[ ${#lines[@]} = 0 ]]; then
+    #        echo "Not found"
+    #        return
+    #    fi
     lines=($(cat $ledir| awk -F " " '{print $3}'))
     lineComment=($(cat $ledir| awk -F " " '{print $2}'))
     local pathname
     local choice
     if [[ ${#lines[@]} > 1 ]]; then
-        while [[ -z "$pathname" ]]; do
-            local index=1
-            local line
-            for line in ${lines[@]}; do
-                if [[ $skip_sel -ne "1" ]]; then
-                  printf "\033[92m%6s \033[0m%s \033[93m%s\033[0m\n" "[$index]" $line [${lineComment[($index -1)]}] 
-                fi
-                index=$(($index + 1))
-            done
-            if [[ $skip_sel -eq "1" ]]; then
-              choice=$1
-            else
-              echo
-              echo -n "Select one: "
-              unset choice
-              read choice
-              if [[ $choice -eq "0" ]]; then
-                return
-              fi
-            fi
-            echo ${lineComment[$(($choice-1))]}
-            if [[ $choice -gt ${#lines[@]} || $choice -lt 1 ]]; then
-                echo "Invalid choice"
-                continue
-            fi
-            pathname=${lines[$(($choice-1))]}
-        done
+	while [[ -z "$pathname" ]]; do
+	    local index=1
+	    local line
+	    for line in ${lines[@]}; do
+		if [[ $skip_sel -ne "1" ]]; then
+		    printf "\033[92m%6s \033[0m%s \033[93m%s\033[0m\n" "[$index]" $line [${lineComment[($index -1)]}] 
+		fi
+		index=$(($index + 1))
+	    done
+	    if [[ $skip_sel -eq "1" ]]; then
+		choice=$1
+	    else
+		echo
+		echo -n "Select one: "
+		unset choice
+		read choice
+		if [[ $choice -eq "0" ]]; then
+		    return
+		fi
+	    fi
+	    #            echo ${lineComment[$(($choice-1))]}
+	    if [[ $choice -gt ${#lines[@]} || $choice -lt 1 ]]; then
+		echo "Invalid choice"
+		continue
+	    fi
+	    pathname=${lines[$(($choice-1))]}
+	done
     else
-        pathname=${lines[0]}
+	pathname=${lines[0]}
     fi
-    echo $pathname
+    #    echo $pathname
     cd $pathname
 }
+
+function ncd () {
+if [[ -z "$1" ]]; then
+    echo "Usage: ncd <regex>"
+    return
+fi
+
+T=${PHOME}
+# reluanch Project HOME for TOP Project Directory
+if [[ $T == "" ]]; then
+    local xhome
+    xhome=`sed -n 1p $lePROJ|awk -F " " '{print $3}'`
+    echo $xhome
+    export PHOME=$xhome
+    T=${PHOME}
+fi
+
+if [[ ! -f $T/filelist ]]; then
+    echo -n "Creating index..."
+    (cd $T; find . -wholename ./out -prune -o -wholename ./.repo -prune -o -wholename ./obj -prune -o -type f > filelist)
+    echo " Done"
+    echo ""
+fi
+local lines
+lines=($(\grep "$1" $T/filelist | sed -e 's/\/[^/]*$//' | sort | uniq))
+if [[ ${#lines[@]} = 0 ]]; then
+    echo "Not found"
+    return
+fi
+local pathname
+local choice
+if [[ ${#lines[@]} > 1 ]]; then
+    while [[ -z "$pathname" ]]; do
+	local index=1
+	local line
+	for line in ${lines[@]}; do
+	    printf "%6s %s\n" "[$index]" $line
+	    index=$(($index + 1))
+	done
+	echo
+	echo -n "Select one: "
+	unset choice
+	read choice
+	if [[ $choice -eq "" ]]; then
+	    echo "Oops!!!"
+	    return
+	fi
+	if [[ $choice -gt ${#lines[@]} || $choice -lt 1 ]]; then
+	    echo "Invalid choice"
+	    continue
+	fi
+	pathname=${lines[$(($choice-1))]}
+    done
+else
+    pathname=${lines[0]}
+fi
+cd $T/$pathname
+}
+
 
 
 #
@@ -284,9 +391,10 @@ function go_ledir
 
 function h()
 {
-     local ledir=$lePROJ
-     local lefiles=$lePROJsrc
-     d $1 $2 $@
+    local ledir=$lePROJ
+    local lefiles=$lePROJsrc
+    echo -e "Project select via \033[44m>>> \033[91msp\033[93m * $llproj\033[0m\033[44m <<<\033[0m"
+    d $1 $2 $@
 }
 
 
@@ -296,77 +404,138 @@ function h()
 function d
 {
 
-   if [[ "$1" == "l" ]]; then
-      echo -e "\e[92mShow favor $ledir \e[0m"
-      cat $ledir
-#      go_ledir
-      return
-   fi
-   
-   if [[ "$1" == "?" ]]; then
-      echo ""
-      echo -e " \e[95m$FUNCNAME/h\e[0m v0.1 for direcoty store and show (\e[94m$ledir\e[0m)"
-      echo "------------------------------------"
-      echo -e " 0     -- show src list"
-      echo -e " c     -- clean $ledir"
-      echo -e " -     -- delete last dir in $ledir"
-      echo -e " s|set -- store current directory in $ledir"
-      echo -e " l     -- list $ledir history"
-      echo    " f foo -- store foo files in $lefiles"
-      return
-   fi
-   
-   if [[ "$1" == "c" ]]; then
-      cat /dev/null > $ledir
-      echo -e "clean \e[94m$ledir\e[0m)"
-      return
-   fi   
+    if [[ "$1" == "l" ]]; then
+	echo -e "\e[07mShow favor $ledir \e[0m"
+	grepsel -ch $ledir
+	#      cat $ledir
+	#      go_ledir
+	return
+    fi
 
-   if [[ "$1" == "0" ]]; then
-      echo -e "\e[92mShow favor leSRC \e[0m"
-      cat $lefiles
-      return
-   fi   
-   
-   #### test argument is integer
-   if (( $1 > 0 )) 2>/dev/null; then
-     go_ledir $1
-     return 
-   fi
+    if [[ "$1" == "?" ]]; then
+	echo ""
+	echo -e " \e[95m$FUNCNAME/h\e[0m v0.1 for direcoty store and show (\e[94m$ledir\e[0m)"
+	echo "------------------------------------"
+	echo -e " 0     -- show src list"
+	echo -e " c     -- clean $ledir"
+	echo -e " -     -- delete last dir in $ledir"
+	echo -e " s|set -- store current directory in $ledir"
+	echo -e " l     -- list $ledir history"
+	echo    " f foo -- store foo files in $lefiles"
+	return
+    fi
 
-   if [[ "$1" == "-" ]]; then
-      sed -i '$ d' $ledir
-      echo -e "remove last \e[94m$ledir\e[0m)"
-      return
-   fi   
+    if [[ "$1" == "c" ]]; then
+	cat /dev/null > $ledir
+	echo -e "clean \e[94m$ledir\e[0m)"
+	return
+    fi   
 
-   if [[ "$1" == "v" ]]; then
-      vgrep -v
-      return
-   fi   
+    if [[ "$1" == "0" ]]; then
+	echo -e "\e[92mShow favor leSRC \e[0m"
+	cat $lefiles
+	return
+    fi   
 
-   if [[ "$1" == "f" ]]; then
-      local DATE=`date +%Y%m%d-%H%M`
-      local DIR=`pwd`
-      local STR=${DATE}">> "${DIR}$2
-      echo $STR >> $lefiles
-      return
-   fi   
+    #### test argument is integer
+    if (( $1 > 0 )) 2>/dev/null; then
+	go_ledir $1
+	return 
+    fi
 
-   if [[ "$1" == "set" || "$1" == "s" ]]; then
-     local DATE=`date +%Y%m%d-%H%M`
-     local DIR=`pwd`
-     read -p "keyboard: " kw
-     local STR=${DATE}">> "$kw" "${DIR}
-     kw="${kw:--}"
-     echo $STR >> $ledir
-     echo -e "DIR \e[96m${DIR}\e[0m Stored \e[91m@${DATE}\e[0m !!!!"
-     return
-   fi        
+    if [[ "$1" == "-" ]]; then
+	sed -i '$ d' $ledir
+	echo -e "remove last \e[94m$ledir\e[0m)"
+	return
+    fi   
 
-   echo -e "\e[92mShow favor \e[0m$ledir "
-   go_ledir $1
+    if [[ "$1" == "v" ]]; then
+	vgrep -v
+	return
+    fi   
+
+    if [[ "$1" == "f" ]]; then
+	local DATE=`date +%Y%m%d-%H%M`
+	local DIR=`pwd`
+	local STR=${DATE}">> "${DIR}$2
+	echo $STR >> $lefiles
+	return
+    fi   
+
+    if [[ "$1" == "set" || "$1" == "s" ]]; then
+	local DATE=`date +%Y%m%d-%H%M`
+	local DIR=`pwd`
+	read -p "keyboard: " kw
+	local STR=${DATE}">> "$kw" "${DIR}
+	kw="${kw:--}"
+	echo $STR >> $ledir
+	echo -e "DIR \e[96m${DIR}\e[0m Stored \e[91m@${DATE}\e[0m !!!!"
+	return
+    fi        
+
+    echo -e "\e[92mShow favor \e[0m$ledir "
+    go_ledir $1
 }
+
+hl() {
+
+	_usage() { 
+		echo "usage: YOUR_COMMAND | hl [-i] [-d] args...
+	-i : ignore case
+	-d : disable regexp"
+	}
+
+	local _OPTS
+
+	# detect pipe or tty
+	if test -t 0; then 
+		_usage
+		return
+	fi
+
+	# magae flags
+	while getopts ":idQ" opt; do
+	    case $opt in 
+	       i) _OPTS+=" -i " ;;
+		   d)  _OPTS+=" -Q " ;;
+	       Q)  _OPTS+=" -Q " ;;
+	           # let's keep hidden compatibility with -Q for original ack users
+	       \?) _usage
+				return ;;
+	    esac
+	done
+	
+	shift $(($OPTIND - 1))
+
+	# check maximum allowed input
+	if (( ${#@} > 12)); then
+		echo "Too many terms. h supports a maximum of 12 groups. Consider relying on regular expression supported patterns like \"word1\\|word2\""
+		exit -1
+	fi;
+
+	# set zsh compatibility
+	[[ -n $ZSH_VERSION ]] && setopt localoptions && setopt ksharrays && setopt ignorebraces
+
+	local _i=0
+
+	#inverted-colors-last scheme
+	_COLORS=( "underline bold red" "underline bold green" "underline bold yellow"  "underline bold blue"  "underline bold magenta"  "underline bold cyan" "bold on_red" "bold on_green" "bold black on_yellow" "bold on_blue"  "bold on_cyan" "bold on_magenta"  )
+	#inverted-colors-first scheme
+	#_COLORS=( "bold on_red" "bold on_green" "bold black on_yellow" "bold on_blue" "bold on_magenta" "bold on_cyan" "bold black on_white"  "underline bold red" "underline bold green" "underline bold yellow"  "underline bold blue"  "underline bold magenta" 	)
+
+	# build the filtering command
+	for keyword in "$@"
+	do
+		local _COMMAND=$_COMMAND"ack $_OPTS --noenv --flush --passthru --color --color-match=\"${_COLORS[$_i]}\" $keyword |"
+	    _i=$_i+1
+	done
+	#trim ending pipe
+	_COMMAND=${_COMMAND%?}
+	#echo "$_COMMAND"
+	cat - | eval $_COMMAND
+}
+
+
 
 # color
 # http://misc.flogisoft.com/bash/tip_colors_and_formatting

@@ -1,2 +1,2 @@
 #! /bin/bash
-wine ~/.wine/drive_c/ap/ps_cs5/cs5/Photoshop.exe $@ >/dev/null 2>&1 &
+wine ~/.wine/drive_c/Program\ Files/Adobe/Adobe\ Photoshop\ CS5/Photoshop.exe $@ > /dev/null 2>&1 &

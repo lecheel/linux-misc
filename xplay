@@ -1,4 +1,4 @@
 #! /bin/bash
 export LANG=zh_TW.UTF-8
 export LC_ALL=zh_TW.UTF-8
-wine ~/.wine/drive_c/Program\ Files\ \(x86\)/xfplay/xfplay.exe >/dev/null 2>&1 &
+wine ~/.wine/drive_c/ap/xfplay/xfplay.exe >/dev/null 2>&1 &

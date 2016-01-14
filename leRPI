@@ -1,0 +1,4 @@
+#! /bin/bash
+figlet "Looking for RPi"
+sudo nmap -sP 192.168.0.2-50 |grep -B2 Rasp
+

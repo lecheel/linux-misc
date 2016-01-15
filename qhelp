@@ -159,7 +159,7 @@ if [[ $1 == "u" ]]; then
     echo "tip4:  chrome left icon  -- gconftool-2 --set /apps/metacity/general/button_layout --type string \"close,minimize,maximize:\""
     echo "tip5:  mplayer           -- mplayer -vo vaapi:dm=0 -va vaapi"
     echo "tip6:  skype             -- sudo apt-get install sni-qt:i386"
-    echo "tipx:  trayIcon          --gsettings set com.canonical.indicator.messages applications "['Wine','WeChat']"
+    echo "tipx:  trayIcon          --gsettings set com.canonical.indicator.messages applications \"['Wine','WeChat']\""
     echo "tip7:  vDesk number      -- gsettings set org.compiz.core:/org/compiz/profiles/unity/plugins/core/ hsize 3" 
     echo "tip8:  debugfs           -- mount -t debugfs debug /mnt"
     echo "tip9:  javac             -- sudo update-alternatives --config javac "
@@ -170,6 +170,7 @@ if [[ $1 == "w" ]]; then
     echo "hint for wine/vm/..."
     echo "    :  env WINEARCH=win32 WINEPREFIX=~/.wine32 winetricks dotnet20"
     echo "    :  env WINEARCH=win32 WINEPREFIX=~/.wine winetricks atmlib gdiplus msxml3 msxml6 vcrun2005 vcrun2005sp1 vcrun2008 fontsmooth-rgb corefonts allfonts"
+    echo "    :  winetricks riched20"
     echo "    VirtualBox for OSX https://github.com/geerlingguy/mac-osx-virtualbox-vm"
     echo "    :  VBoxManage modifyvm 'osx-yosemite' --cpuidset 00000001 000306a9 00020800 80000201 178bfbff"
 fi

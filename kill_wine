@@ -1,4 +1,4 @@
 #! /bin/bash
 figlet "kill WiNE"
-kill `ps -A|/bin/grep exe`
-kill `ps -A|/bin/grep wineserver`
+kill `ps -A|/bin/grep exe` > /dev/null 2>&1
+kill `ps -A|/bin/grep wineserver` >/dev/null 2>&1

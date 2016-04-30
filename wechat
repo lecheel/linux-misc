@@ -1,4 +1,8 @@
 #! /bin/bash
 export LANG=zh_TW.UTF-8
 export LC_ALL=zh_TW.UTF-8
-wine /home/lecheel/.wine/drive_c/Program\ Files/Tencent/WeChat/WeChat.exe > /dev/null 2>&1 &
+if [[ -f /home/lecheel/.wine/drive_c/Program\ Files/Tencent/WeChat/WeChat.exe ]]; then
+   wine /home/lecheel/.wine/drive_c/Program\ Files/Tencent/WeChat/WeChat.exe -no-dwrite > /dev/null 2>&1 &
+else
+   echo -e "o  \033[91mWe\033[95mChat\033[0m is not available!!!"
+fi

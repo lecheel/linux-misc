@@ -35,7 +35,9 @@ bakwht='\033[47m' # White
 txtrst='\033[0m'  # Text Reset
 
 if [[ $1 == "1" ]]; then
-    echo -e "${txtred}F1${txtrst}-DIR ${txtgrn}F2/F3${txtrst} Search Prev/Next ${txtylw}F4${txtrst}-Highlight $txtbluF5${txtrst}-Column ${txtcyn}F6${txtrst}- F7- F8- ${txtred}F9-${txtrst}gitgutter ${txtgrn}F10${txtrst}-MRU ${txtylw}F11${txtrst}-vgrepView F12"
+    echo -e "${txtred}F1${txtrst}-DIR ${txtgrn}F2/F3${txtrst} Search Prev/Next ${txtylw}F4${txtrst}-Highlight 
+$txtbluF5${txtrst}-Column ${txtcyn}F6${txtrst}- F7- F8- ${txtred}F9-${txtrst}gitgutter ${txtgrn}F10${txtrst}-MRU 
+${txtylw}F11${txtrst}-vgrepView F12"
     exit
 fi
 
@@ -68,14 +70,17 @@ if [[ $1 == "" ]]; then
     echo -e " "
     echo -e "  -- Mark ${txtred}ma <---> \`a${txtrst}"
     echo -e "  -- gc    tComment"
-    echo -e " "
-
-    echo "        git ls-files -o --exclude-standard"
+    echo -e "  -- git ls-files -o --exclude-standard"
     echo -e "  -- git diff --word-diff"
     echo -e "  -- port select --list python"
     echo -e "  -- sudo port select --set python python27"
     echo -e "  -- sudo port select --set python python35"
     echo -e "  github ${txtgrn}git remote set-url origin git@github.com:lecheel/repo.git${txtrst}"
+    echo -e "  vim      -- git clone https://github.com/lecheel/le-vimrc ~/.vim"
+    echo -e "  misc     -- git clone https://github.com/lecheel/linux-misc"
+    echo -e "  osx misc -- git clone https://github.com/lecheel/misc"
+    echo -e "  emacs    -- git clone https://github.com/lecheel/le-el"
+    echo -e "  emacs :-) - https://www.emacswiki.org/emacs/Evil"
 
     exit
 fi
@@ -93,12 +98,14 @@ if [[ $1 == "vim" ]]; then
     echo -e "  -- ${txtylw}:%s/${txtrst}<C-V><C-M>${txtylw}//g ${txtrst}"
     echo -e "  -- delete operation      dt<SPACE> dfX     Delete unTil SPACE, Delete Find X"
     echo "OPERATOR"
-    echo -e "  -- cscope     [C-\] ${txtred}c${txtrst}{calling} ${txtgrn}d${txtrst}{called} ${txtylw}e${txtrst}{grep} $txtblug${txtrst}{defintion} :cs"
+    echo -e "  -- cscope     [C-\] ${txtred}c${txtrst}{calling} ${txtgrn}d${txtrst}{called} ${txtylw}e${txtrst}{grep} 
+$txtblug${txtrst}{defintion} :cs"
     echo -e "  -- cscope     <leader>${txtred}s${txtgrn}[cdeg...]${txtrst}"
     echo -e "  -- easymotion <SPC> ${txtgrn}s/f/F${txtrst} "
     echo -e "  -- vimsurround  cs\"' ${txtylw}\"->'${txtrst}   ds\" " 
     echo -e "  -- fugitive   <leader>${txtred}g${txtgrn}[dlsbg]${txtrst}  d-diff l-log s-status b-bruanch g-grep"
-    echo -e "  -- Cdo        set hidden, grep foo, Cdo s/foo/bar/c | update http://vimcasts.org/episodes/project-wide-find-and-replace/" 
+    echo -e "  -- Cdo        set hidden, grep foo, Cdo s/foo/bar/c | update 
+http://vimcasts.org/episodes/project-wide-find-and-replace/" 
     echo ""
 fi
 
@@ -128,7 +135,8 @@ if [[ $1 == "e" ]]; then
     echo -e "  M-;       -- comment/uncomment ,ci ,cc ,cl for quick comment evil-nerd-commenter"	
     echo "  wgrep workflow "
     echo "  using ack/ag/grep   with wgrep/wgrep-ack/wgrep-ag mode package found"
-    echo -e "  grep-find xxx /  <${txtred}wgrep-change-to-wgrep-mode${txtrst}>/.modify./<${txtgrn}wgrep-finish-edit${txtrst}>/<${txtylw}wgrep-save-all-buffers${txtrst}>"     
+    echo -e "  grep-find xxx /  
+<${txtred}wgrep-change-to-wgrep-mode${txtrst}>/.modify./<${txtgrn}wgrep-finish-edit${txtrst}>/<${txtylw}wgrep-save-all-buffers${txtrst}>"     
     echo -e "  M-s[${txtylw}ow.${txtrst}]   -- Search occur/word/Symbol "
 fi
 
@@ -155,11 +163,13 @@ if [[ $1 == "u" ]]; then
     echo "    :  sudo apt-get install automake "
     echo "    :  sudo apt-get build-dep silversearcher-ag"
     echo "    :  sudo dpkg-reconfigure virtualbox-dkms"
+    echo "    :  sudo dd if=/dev/zero of=/dev/sdX bs=1k count=2048 "
     echo "tip3:  disable scrollbar -- gsettings set com.canonical.desktop.interface scrollbar-mode normal"
-    echo "tip4:  chrome left icon  -- gconftool-2 --set /apps/metacity/general/button_layout --type string \"close,minimize,maximize:\""
+    echo "tip4:  chrome left icon  -- gconftool-2 --set /apps/metacity/general/button_layout --type string 
+\"close,minimize,maximize:\""
     echo "tip5:  mplayer           -- mplayer -vo vaapi:dm=0 -va vaapi"
     echo "tip6:  skype             -- sudo apt-get install sni-qt:i386"
-    echo "tipx:  trayIcon          --gsettings set com.canonical.indicator.messages applications \"['Wine','WeChat']\""
+    echo "tipx:  trayIcon          -- gsettings set com.canonical.indicator.messages applications \"['Wine','WeChat']\""
     echo "tip7:  vDesk number      -- gsettings set org.compiz.core:/org/compiz/profiles/unity/plugins/core/ hsize 3" 
     echo "tip8:  debugfs           -- mount -t debugfs debug /mnt"
     echo "tip9:  javac             -- sudo update-alternatives --config javac "
@@ -169,7 +179,8 @@ fi
 if [[ $1 == "w" ]]; then
     echo "hint for wine/vm/..."
     echo "    :  env WINEARCH=win32 WINEPREFIX=~/.wine32 winetricks dotnet20"
-    echo "    :  env WINEARCH=win32 WINEPREFIX=~/.wine winetricks atmlib gdiplus msxml3 msxml6 vcrun2005 vcrun2005sp1 vcrun2008 fontsmooth-rgb corefonts allfonts"
+    echo "    :  env WINEARCH=win32 WINEPREFIX=~/.wine winetricks atmlib gdiplus msxml3 msxml6 vcrun2005 vcrun2005sp1 
+vcrun2008 fontsmooth-rgb corefonts allfonts"
     echo "    :  winetricks riched20"
     echo "    VirtualBox for OSX https://github.com/geerlingguy/mac-osx-virtualbox-vm"
     echo "    :  VBoxManage modifyvm 'osx-yosemite' --cpuidset 00000001 000306a9 00020800 80000201 178bfbff"
@@ -183,3 +194,4 @@ for x in 0 1 4 5 7 8;
 done; echo; done; done; echo;
 
 fi
+

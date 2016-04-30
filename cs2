@@ -1,2 +1,6 @@
 #! /bin/bash
-wine ~/.wine/drive_c/Program\ Files/Adobe/Adobe\ Photoshop\ CS2/Photoshop.exe $@ > /dev/null 2>&1 &
+if [[ -f ~/.wine/drive_c/Program\ Files/Adobe/Adobe\ Photoshop\ CS2/Photoshop.exe ]]; then
+    wine ~/.wine/drive_c/Program\ Files/Adobe/Adobe\ Photoshop\ CS2/Photoshop.exe $@ > /dev/null 2>&1 &
+else
+    echo -e "\033[92mPhotoshop \033[93mcs2\033[0m is not installed!"
+fi

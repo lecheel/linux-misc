@@ -1,3 +1,0 @@
-#1 /bin/bash
-figlet "QcO05"
-xfreerdp /d:quanta /u:99090936 /p:00i@Quanta /v:qco05.quantatw.com /g:mytcgw.quantatw.com /cert-ignore

@@ -1,0 +1,12 @@
+#! /bin/bash
+echo "TsePRO 60 days ever ... "
+if [ -f /c/ap/tse/tse_fix.py ]; then
+    cd /c/ap/tse/
+    python tse_fix.py
+fi
+
+if [ -f ~/.wine/drive_c/tse/tse_fix.py ]; then
+    cd ~/.wine/drive_c/tse
+    python tse_fix.py
+
+fi

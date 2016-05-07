@@ -1,2 +1,3 @@
 #! /bin/bash
-wine ~/.wine/drive_c/ap/ps7/Photoshop/Photoshop.exe > /dev/null 2>&1 &
+#wine ~/.wine/drive_c/ap/ps7/Photoshop/Photoshop.exe > /dev/null 2>&1 &
+wine ~/.wine/drive_c/Program\ Files/Adobe/Photoshop\ 7.0/Photoshop.exe > /dev/null 2>&1 &

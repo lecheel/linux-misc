@@ -79,6 +79,7 @@ if [[ $1 == "" ]]; then
     echo -e "  vim      -- git clone https://github.com/lecheel/le-vimrc ~/.vim"
     echo -e "  misc     -- git clone https://github.com/lecheel/linux-misc"
     echo -e "  osx misc -- git clone https://github.com/lecheel/misc"
+    echo -e "  babun    -- git clone https://github.com/lecheel/babun-misc"
     echo -e "  emacs    -- git clone https://github.com/lecheel/le-el"
     echo -e "  emacs :-) - https://www.emacswiki.org/emacs/Evil"
 
@@ -171,6 +172,8 @@ if [[ $1 == "u" ]]; then
     echo "tip6:  skype             -- sudo apt-get install sni-qt:i386"
     echo "tipx:  trayIcon          -- gsettings set com.canonical.indicator.messages applications \"['Wine','WeChat']\""
     echo "tip7:  vDesk number      -- gsettings set org.compiz.core:/org/compiz/profiles/unity/plugins/core/ hsize 3" 
+    echo "tip :  SuperKey          -- dconf write /org/compiz/profiles/unity/plugins/unityshell/show-launcher '\"\"'"
+    echo "tip :  Launcher          -- gsettings set com.canonical.Unity.Launcher launcher-position Bottom "
     echo "tip8:  debugfs           -- mount -t debugfs debug /mnt"
     echo "tip9:  javac             -- sudo update-alternatives --config javac "
 fi    

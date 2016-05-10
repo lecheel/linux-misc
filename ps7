@@ -1,3 +1,6 @@
 #! /bin/bash
-#wine ~/.wine/drive_c/ap/ps7/Photoshop/Photoshop.exe > /dev/null 2>&1 &
-wine ~/.wine/drive_c/Program\ Files/Adobe/Photoshop\ 7.0/Photoshop.exe > /dev/null 2>&1 &
+if [[ -f ~/.wine/drive_c/ap/ps7/Photoshop/Photoshop.exe ]]; then
+    wine ~/.wine/drive_c/ap/ps7/Photoshop/Photoshop.exe > /dev/null 2>&1 &
+else 
+    wine ~/.wine/drive_c/Program\ Files/Adobe/Photoshop\ 7.0/Photoshop.exe > /dev/null 2>&1 &
+fi		

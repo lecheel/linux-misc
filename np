@@ -1,0 +1,4 @@
+#! /bin/bash
+if [ -f /home/lecheel/.wine/drive_c/ap/np/notepad++.exe ]; then
+   wine /home/lecheel/.wine/drive_c/ap/np/notepad++.exe $@ >/dev/null 2>&1 &
+fi

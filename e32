@@ -1,0 +1,6 @@
+#! /bin/bash
+if [[ -f /home/lecheel/.wine/drive_c/tse/g32.exe ]]; then
+   wine /home/lecheel/.wine/drive_c/tse/g32.exe $@ > /dev/null 2>&1 &
+else
+   echo -e "o  \033[92mTse\033[93mPRO\033[0m is not installed on your system!!!"   
+fi

@@ -1,4 +1,4 @@
 #! /bin/bash
-export LANG=zh_TW.UTF-8
-export LC_ALL=zh_TW.UTF-8
-wine ~/.wine/drive_c/Program\ Files/Adobe/Adobe\ Photoshop\ CS5/Photoshop.exe $@ > /dev/null 2>&1 &
+if [[ -f ~/.wine/drive_c/ap/cs5/Photoshop.exe ]]; then
+    wine ~/.wine/drive_c/ap/cs5/Photoshop.exe >/dev/null 2>&1 &
+fi		

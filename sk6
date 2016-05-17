@@ -1,0 +1,5 @@
+#! /bin/bash
+if [[ -f ~/.wine/drive_c/ap/sk6/SketchBookPro6.exe ]]; then
+    echo -e "Active \033[92mSketchBookPro\033[0m"
+    wine ~/.wine/drive_c/ap/sk6/SketchBookPro6.exe >/dev/null 2>&1 &
+fi		

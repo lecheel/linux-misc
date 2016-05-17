@@ -53,16 +53,16 @@ if [[ $1 == "--unlink" || $1 == "u" ]]; then
 fi
 
 if [[ $1 == "cc" ]]; then
-    if [[ -f ~/.wine/cc2014 ]]; then
-	echo "already in env(cc_2014)"
+    if [[ -f ~/.wine/cc ]]; then
+	echo "already in env(cc)"
 	exit
     else
 	kwine
 	if [[ -L ~/.wine ]]; then
 	    unlink ~/.wine
 	fi
-	ln -s ~/.wine_cc2014 ~/.wine
-	echo -e "wine env(\033[92mcc2014\033[0m) is Created!"
+	ln -s ~/.wine_cc ~/.wine
+	echo -e "wine env(\033[92mcc\033[0m) is Created!"
 	dirwine
     fi
     exit
@@ -118,8 +118,8 @@ fi
 
 
 
-if [[ -f ~/.wine/cc2014 ]]; then
-    echo -e "Now wine running with env(\033[91mcc 2014\033[0m)"
+if [[ -f ~/.wine/cc ]]; then
+    echo -e "Now wine running with env(\033[91mcc\033[0m)"
 fi
 
 if [[ -f ~/.wine/baidu ]]; then

@@ -1,0 +1,16 @@
+#! /bin/bash
+if [[ $1 == "" ]]; then
+    echo "wacom on/off"
+    exit
+fi
+if [[ $1 == "on" ]]; then
+    xsetwacom -v --set "Wacom Bamboo 16FG 6x8 Finger touch" touch on > /dev/null 2>&1
+    echo -e "wacom Touch is \033[93mon\033[0m"
+    exit
+fi
+
+if [[ $1 == "off" ]]; then
+    xsetwacom -v --set "Wacom Bamboo 16FG 6x8 Finger touch" touch off > /dev/null 2>&1
+    echo -e "wacom Touch is \033[91moff\033[0m"
+    exit
+fi

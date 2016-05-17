@@ -1,0 +1,4 @@
+#! /bin/bash
+if [ -f ~/.wine/drive_c/ap/uedit/uedit32.exe ]; then
+   wine ~/.wine/drive_c/ap/uedit/uedit32.exe $@ > /dev/null 2>&1 &
+fi

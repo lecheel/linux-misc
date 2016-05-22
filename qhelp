@@ -175,6 +175,7 @@ if [[ $1 == "u" ]]; then
     echo "tip :  icon menus        -- gsettings set org.gnome.desktop.interface menus-have-icons true"
     echo "tip :  SuperKey          -- dconf write /org/compiz/profiles/unity/plugins/unityshell/show-launcher '\"\"'"
     echo "tip :  Launcher          -- gsettings set com.canonical.Unity.Launcher launcher-position Bottom "
+    echo "tip :  alt click         -- gsettings set org.gnome.desktop.wm.preferences mouse-button-modifier '<Super>'"
     echo "tip8:  debugfs           -- mount -t debugfs debug /mnt"
     echo "tip9:  javac             -- sudo update-alternatives --config javac "
 fi    

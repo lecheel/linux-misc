@@ -52,6 +52,16 @@ if [[ $1 == "--unlink" || $1 == "u" ]]; then
     exit
 fi
 
+if [[ $1 == "new" ]]; then
+       echo "create .wine_xx env"
+       kwine
+       env WINEARCH=win32 WINEPREFIX=~/.wine_xx winetricks
+       touch ~/.wine_xx/xx
+       echo "xx" > ~/.wine_xx/ID
+       exit	
+fi
+
+
 if [[ $1 == "cc" ]]; then
     if [[ -f ~/.wine/cc ]]; then
 	echo "already in env(cc)"
@@ -67,6 +77,25 @@ if [[ $1 == "cc" ]]; then
     fi
     exit
 fi
+
+if [[ $1 == "ps" ]]; then
+    if [[ -f ~/.wine/ps ]]; then
+	echo "already in env(ps7)"
+	exit
+    else
+	kwine
+	if [[ -L ~/.wine ]]; then
+	    unlink ~/.wine
+	fi
+	ln -s ~/.wine_ps ~/.wine
+	echo -e "wine env(\033[92mps\033[0m) is Created!"
+	dirwine
+    fi
+    exit
+fi
+
+
+
 
 if [[ $1 == "baidu" ]]; then
     if [[ -f ~/.wine/baidu ]]; then
@@ -116,6 +145,22 @@ if [[ $1 == "32" ]]; then
     exit
 fi
 
+
+if [[ $1 == "xx" ]]; then
+    if [[ -f ~/.wine/xx ]]; then
+	echo "already in env(win_xx)"
+	exit
+    else
+	kwine
+	if [[ -L ~/.wine ]]; then
+	    unlink ~/.wine
+	fi
+	ln -s ~/.wine_xx ~/.wine
+	echo -e "wine env(\033[92mxx\033[0m) is Created!"
+	dirwine
+    fi
+    exit
+fi
 
 
 if [[ -f ~/.wine/cc ]]; then

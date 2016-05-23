@@ -1,7 +1,7 @@
 #! /bin/bash
 #export LANG=zh_TW.UTF-8
 #export LC_ALL=zh_TW.UTF-8
-if [ -f ~/.wine/drive_c/ap/cs6/PhotoshopPortable/PhotoshopCS6Portable.exe ]; then 
-   wine ~/.wine/drive_c/ap/cs6/PhotoshopPortable/PhotoshopCS6Portable.exe > /dev/null 2>&1 &
+if [ -f ~/.wine/drive_c/ap/cs6/cs/Photoshop.exe ]; then 
+   wine ~/.wine/drive_c/ap/cs6/cs/Photoshop.exe > /dev/null 2>&1 &
    exit
 fi

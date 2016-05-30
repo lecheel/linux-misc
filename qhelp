@@ -178,6 +178,9 @@ if [[ $1 == "u" ]]; then
     echo "tip :  alt click         -- gsettings set org.gnome.desktop.wm.preferences mouse-button-modifier '<Super>'"
     echo "tip8:  debugfs           -- mount -t debugfs debug /mnt"
     echo "tip9:  javac             -- sudo update-alternatives --config javac "
+    echo "tip :  dconf             -- dconf dump /org/gnome/desktop/wm/keybindings/ > lekey.dconf"
+    echo "tip :  dconf             -- dconf dump /org/gnome/terminal/legacy/keybindings/ > terminal.dconf"
+    echo "tip :  dconf             -- dconf load /org/gnome/desktop/wm/keybindings/ < lekey.dconf"
 fi    
 
 

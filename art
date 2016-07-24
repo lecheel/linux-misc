@@ -1,0 +1,7 @@
+#! /bin/bash
+if [[ -f ~/.wine/drive_c/ap/artrage/ArtRage.exe ]]; then
+    echo "-- Active ArtRage...."
+    wine ~/.wine/drive_c/ap/artrage/ArtRage.exe > /dev/null 2>&1 &
+else
+    echo -e "-- No \033[93mArtRage\033[0m is installed" 
+fi		

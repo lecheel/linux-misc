@@ -55,6 +55,10 @@ fi
 if [[ $1 == "new" ]]; then
        echo "create .wine_xx env"
        kwine
+       if [[ -L ~/.wine ]]; then
+	   unlink ~/.wine
+	   echo -e "\033[93mWine Env is Removed!  Create .wine_xx\033[0m"
+       fi
        env WINEARCH=win32 WINEPREFIX=~/.wine_xx winetricks
        touch ~/.wine_xx/xx
        echo "xx" > ~/.wine_xx/ID

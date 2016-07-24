@@ -1,0 +1,10 @@
+#! /bin/bash
+echo "Fixed dropbos ICONS grey"
+cd /usr/share/icons/ubuntu-mono-dark/apps
+sudo mkdir 22/UNUSED
+sudo mv 22/dropbox-* 22/UNUSED/
+sudo mkdir 24/UNUSED
+sudo mv 24/dropbox-* 24/UNUSED/
+sudo update-icon-caches /usr/share/icons/ubuntu-mono-dark
+dropbox stop
+dropbox start

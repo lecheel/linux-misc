@@ -2,6 +2,6 @@
 if [[ -f ~/.wine/drive_c/ap/ps7/Photoshop.exe ]]; then
     echo -e "Active \033[93mps7\033[0m...."
     wine ~/.wine/drive_c/ap/ps7/Photoshop.exe > /dev/null 2>&1 &
-else 
-    wine ~/.wine/drive_c/Program\ Files\ \(x86\)/Adobe/Photoshop\ 7.0/Photoshop.exe > /dev/null 2>&1 &
+else
+    echo -e "-- No \033[93mPs7\033[0m is installed" 
 fi		
